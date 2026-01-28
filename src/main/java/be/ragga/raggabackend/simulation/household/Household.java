@@ -22,4 +22,5 @@ public class Household {
 
     //  MEMBERS (ONE-TO-MANY)
     Set<Inhabitant> members;
+    //  MEMBER LEAVES WHEN (FULL-TIME JOB/30/MARRIED)
 }

@@ -16,8 +16,15 @@ public class Job {
     @OneToMany(mappedBy = "job")
     Set<Inhabitant> inhabitants;
 
-    // DESCRIPTION
-    String description;
-    int minimumEducationLevel;
+    //  JOB
     BigDecimal averageSalary;
+    BigDecimal standardDeviation;
+
+    //  DESCRIPTION
+    String description;
+    private EducationLevel educationLevel;
+    BigDecimal desirability;
+    BigDecimal recessionResistance;
+
+
 }

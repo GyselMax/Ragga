@@ -3,6 +3,7 @@ package be.ragga.raggabackend.simulation.household;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Entity
 public class Inhabitant {
@@ -29,5 +30,10 @@ public class Inhabitant {
     boolean employed;
     boolean employable;
     boolean retired;
+
+    //  LIFECYCLE
+    LocalDate birthDate;
+    LocalDate deathDate;
+    EducationLevel educationLevel;
 
 }
