@@ -11,11 +11,11 @@ public class Household {
     @Id
     long Id;
     //  LONGER TERM BUDGETARY EFFECTS
-    BigDecimal savings;
-    BigDecimal debt;
+    BigDecimal SharedSavings;
+    BigDecimal SharedDebt;
 
     //  BUDGET BREAKDOWN
-    BigDecimal grossIncome;
+    BigDecimal totalGrossIncome;
     BigDecimal foodBudget;
     BigDecimal RetailBudget;
     BigDecimal LuxuryBudget;

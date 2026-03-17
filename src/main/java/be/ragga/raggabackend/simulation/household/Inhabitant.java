@@ -17,16 +17,16 @@ public class Inhabitant {
     BigDecimal riskTolerance;
 
     //  BUDGET MODIFIERS
-    BigDecimal income;
-    BigDecimal savings;
-    BigDecimal debt;
+    BigDecimal grossIncome;
+    BigDecimal personalSavings;
+    BigDecimal personalDebt;
     BigDecimal personalCreditLimit;
     BigDecimal averageInterestRate;
 
     //  STATUS MODIFIERS
     @ManyToOne(optional = true)
-    @JoinColumn(name = "jobId")
-    Job job;
+    @JoinColumn(name = "OccupationId")
+    Occupation occupation;
     boolean employed;
     boolean employable;
     boolean retired;
@@ -34,6 +34,8 @@ public class Inhabitant {
     //  LIFECYCLE
     LocalDate birthDate;
     LocalDate deathDate;
+
+    @Enumerated(EnumType.STRING)
     EducationLevel educationLevel;
 
 }
