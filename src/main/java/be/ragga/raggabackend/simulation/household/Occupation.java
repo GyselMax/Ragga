@@ -10,7 +10,7 @@ public class Occupation {
     @Id
     long Id;
 
-    @OneToMany(mappedBy = "jobType")
+    @OneToMany(mappedBy = "occupation")
     Set<Inhabitant> workers;
 
     //  JOB

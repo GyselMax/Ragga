@@ -2,6 +2,7 @@ package be.ragga.raggabackend.simulation.household;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 
 import java.math.BigDecimal;
 import java.util.Set;
@@ -21,6 +22,7 @@ public class Household {
     BigDecimal LuxuryBudget;
 
     //  MEMBERS (ONE-TO-MANY)
+    @OneToMany
     Set<Inhabitant> members;
     //  MEMBER LEAVES WHEN (FULL-TIME JOB/30/MARRIED)
 }
