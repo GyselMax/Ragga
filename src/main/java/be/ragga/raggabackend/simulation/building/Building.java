@@ -1,10 +1,18 @@
 package be.ragga.raggabackend.simulation.building;
-
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 
-abstract public class Building{
-    BigDecimal price;
-    BigDecimal rent;
-    BigDecimal desirability;
-    int[] size = new int[2];
+@Entity
+@Inheritance(strategy = InheritanceType.JOINED)
+public abstract class Building {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long id;
+
+    private BigDecimal price;
+    private BigDecimal rent;
+    private BigDecimal desirability;
+    private int sizeX;
+    private int sizeY;
 }

@@ -1,5 +1,8 @@
 package be.ragga.raggabackend.simulation.building.simulated;
-import be.ragga.raggabackend.simulation.building.Building;
 
-abstract class SimulatedBuilding extends Building {
+import be.ragga.raggabackend.simulation.building.Building;
+import jakarta.persistence.Entity;
+
+@Entity
+public abstract class SimulatedBuilding extends Building {
 }

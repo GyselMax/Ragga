@@ -1,28 +1,23 @@
 package be.ragga.raggabackend.simulation.household;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.Set;
 
 @Entity
 public class Household {
+
     @Id
-    long Id;
-    //  LONGER TERM BUDGETARY EFFECTS
-    BigDecimal SharedSavings;
-    BigDecimal SharedDebt;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long id;
 
-    //  BUDGET BREAKDOWN
-    BigDecimal totalGrossIncome;
-    BigDecimal foodBudget;
-    BigDecimal RetailBudget;
-    BigDecimal LuxuryBudget;
+    private BigDecimal sharedSavings;
+    private BigDecimal sharedDebt;
+    private BigDecimal totalGrossIncome;
+    private BigDecimal foodBudget;
+    private BigDecimal retailBudget;
+    private BigDecimal luxuryBudget;
 
-    //  MEMBERS (ONE-TO-MANY)
-    @OneToMany
-    Set<Inhabitant> members;
-    //  MEMBER LEAVES WHEN (FULL-TIME JOB/30/MARRIED)
+    @OneToMany(mappedBy = "household")
+    private Set<Inhabitant> members;
 }

@@ -1,4 +1,7 @@
 package be.ragga.raggabackend.simulation.building.simulated;
 
-public class SimulatedLowRise extends SimulatedResidential{
+import jakarta.persistence.Entity;
+
+@Entity
+public class SimulatedLowRise extends SimulatedResidential {
 }

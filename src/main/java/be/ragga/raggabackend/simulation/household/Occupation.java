@@ -1,30 +1,31 @@
 package be.ragga.raggabackend.simulation.household;
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.util.Set;
 
 @Entity
 public class Occupation {
+
     @Id
-    long Id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long id;
 
     @OneToMany(mappedBy = "occupation")
-    Set<Inhabitant> workers;
+    private Set<Inhabitant> workers;
 
     //  JOB
-    BigDecimal averageSalary;
-    BigDecimal standardDeviation;
+    private BigDecimal averageSalary;
+    private BigDecimal standardDeviation;
+
     @Enumerated(EnumType.STRING)
-    EducationLevel requiredEducation;
+    private EducationLevel requiredEducation;
 
     //  ECONOMIC FACTORS
-    BigDecimal desirability;
-    BigDecimal recessionResistance;
+    private BigDecimal desirability;
+    private BigDecimal recessionResistance;
 
     //  DEMAND
-    int currentDemand;
-    int currentSupply;
-
+    private int currentDemand;
+    private int currentSupply;
 }
