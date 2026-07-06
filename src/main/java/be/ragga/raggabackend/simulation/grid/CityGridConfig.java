@@ -15,6 +15,19 @@ public class CityGridConfig {
     @Value("${ragga.grid.zoneAnchorCount}")
     private int zoneAnchorCount;
 
+    // No-arg constructor Spring uses to instantiate this bean before
+    // injecting the @Value fields above.
+    public CityGridConfig() {
+    }
+
+    // Package-private constructor for building this config outside of
+    // Spring, e.g. from GridVisualizer's standalone main() method.
+    CityGridConfig(int width, int height, int zoneAnchorCount) {
+        this.width = width;
+        this.height = height;
+        this.zoneAnchorCount = zoneAnchorCount;
+    }
+
     public int getWidth() {
         return width;
     }
