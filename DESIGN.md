@@ -237,6 +237,26 @@ generated state. Each event is driven by existing simulation data — no exotic 
 
 
 
+## Developer Tooling
+
+### Visualizer API (planned)
+The current `GridVisualizer` renders a generated city to a PNG and is run manually from
+the IDE. The goal is to replace/extend this with a **visualizer API consumable from a
+browser**:
+
+- An endpoint that runs city generation with **all tweakable values exposed as request
+  parameters** (grid size, arterial spacing, lot sizes, zone ratios, vacancy, density,
+  seed, ...) and returns a rendered image or renderable data.
+- A simple browser page with sliders/inputs for each knob so tuning is interactive:
+  change a value, see the new city immediately — no IDE, no recompile.
+- Not just generation: **balance values** (economy rates, buff magnitudes, wages, rent
+  factors, ...) should become visualizable the same way once those systems exist, so
+  tuning the live game's balance uses the same workflow.
+- This pairs with the DB-seeded template catalog and the future admin layer: the same
+  browser tooling direction eventually serves admins tuning a running world.
+
+---
+
 ## Roadmap
 
 | Step | Description |
