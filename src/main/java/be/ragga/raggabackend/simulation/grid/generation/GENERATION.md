@@ -3,7 +3,8 @@
 How a city map is generated, stage by stage. All classes live in this
 package and run fully in memory — no Spring context, no database — which is
 why `GridVisualizer` can render a city standalone. Persistence (Phase B)
-maps the finished `GenerationResult` onto JPA entities afterwards.
+maps the finished `GenerationResult` onto JPA entities afterwards — see
+[PERSISTENCE.md](../persistence/PERSISTENCE.md).
 
 ## How to run / judge the output
 
@@ -16,8 +17,9 @@ arrow next to `main`. It writes `grid.png` in the project root and prints:
   (Run Configuration → Program arguments) to reproduce the exact same city.
 
 The visualizer uses `StubTemplateCatalog`, a hardcoded starter library —
-**not** the real building catalog, which will be DB-seeded in Phase B so it
-can grow during a live game without redeploys.
+**not** the real building catalog, which is DB-seeded from this same list at
+boot (Phase B's `BuildingTemplate`) so it can grow during a live game without
+redeploys.
 
 ### Color legend
 

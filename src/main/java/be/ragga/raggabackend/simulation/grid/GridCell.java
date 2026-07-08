@@ -2,6 +2,14 @@ package be.ragga.raggabackend.simulation.grid;
 
 import jakarta.persistence.*;
 
+/**
+ * One persisted grid tile - the map's physical raster layer, one row per cell.
+ *
+ * A cell only knows what physically sits on it ({@link TileType}); zoning is a
+ * property of a {@link be.ragga.raggabackend.simulation.grid.persistence.entity.Lot},
+ * never of a cell (see the TileType/ZoneType docs). The full {@code tiles[][]}
+ * grid a city was generated with is reconstructable by reading these back.
+ */
 @Entity
 public class GridCell {
 
@@ -13,14 +21,14 @@ public class GridCell {
     private GridPosition position;
 
     @Enumerated(EnumType.STRING)
-    private ZoneType zoneType;
+    private TileType tileType;
 
     protected GridCell() {
     }
 
-    public GridCell(GridPosition position, ZoneType zoneType) {
+    public GridCell(GridPosition position, TileType tileType) {
         this.position = position;
-        this.zoneType = zoneType;
+        this.tileType = tileType;
     }
 
     public long getId() {
@@ -31,11 +39,11 @@ public class GridCell {
         return position;
     }
 
-    public ZoneType getZoneType() {
-        return zoneType;
+    public TileType getTileType() {
+        return tileType;
     }
 
-    public void setZoneType(ZoneType zoneType) {
-        this.zoneType = zoneType;
+    public void setTileType(TileType tileType) {
+        this.tileType = tileType;
     }
 }
