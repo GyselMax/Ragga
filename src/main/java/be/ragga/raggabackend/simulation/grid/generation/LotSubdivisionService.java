@@ -34,13 +34,27 @@ public class LotSubdivisionService {
     /**
      * @param lots       road-fronting parcels, ready for zoning
      * @param parkCells  interior cells without road access - become PARK tiles
-     * @param unusedCells degenerate slivers - become UNUSED tiles
+     * @param unusedCells degenerate slivers - the pipeline currently paints
+     *                    these as PARK pockets as well (kept separate in case
+     *                    a later stage wants to treat them differently)
      */
     public record SubdivisionResult(List<LotDraft> lots, List<GridPosition> parkCells, List<GridPosition> unusedCells) {
     }
 
     public SubdivisionResult subdivide(Block block, TileType[][] tiles, RoadClass[][] roadClasses,
-                                       GenerationConfig config, Random random) {
+                                       GenerationConfig config, DensityField density, Random random) {
+        // Lot grain follows density, decided per block (its center) so zone
+        // boundaries stay organically ragged: rural blocks get tripled strip
+        // depth and lot widths (huge field parcels), core blocks a narrowed
+        // width range (fine downtown grain).
+        int blockCenterX = (block.minX() + block.maxX()) / 2;
+        int blockCenterY = (block.minY() + block.maxY()) / 2;
+        double blockDensity = density.at(blockCenterX, blockCenterY);
+        if (blockDensity < config.farmlandDensityThreshold()) {
+            config = config.ruralVariant();
+        } else if (blockDensity > 0.8) {
+            config = config.coreVariant();
+        }
         List<LotDraft> lots = new ArrayList<>();
         List<GridPosition> parkCells = new ArrayList<>();
         List<GridPosition> unusedCells = new ArrayList<>();
@@ -140,6 +154,13 @@ public class LotSubdivisionService {
                           List<LotDraft> lots, List<GridPosition> parkCells) {
         int from = horizontal ? x0 : y0;
         int to = horizontal ? x1 : y1;
+
+        // A strip shorter along the road than the minimum lot width can't
+        // hold a legal lot at all - green pocket instead of a sub-minimum lot.
+        if (to - from + 1 < config.minLotWidth()) {
+            collectCells(x0, y0, x1, y1, parkCells);
+            return;
+        }
 
         int pos = from;
         List<int[]> spans = new ArrayList<>();

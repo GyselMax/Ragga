@@ -10,7 +10,7 @@ import java.util.Random;
 
 /**
  * Runs the whole generation, in the user-chosen order:
- * roads -> blocks -> lots -> parks -> zoning -> buildings.
+ * terrain -> roads -> blocks -> lots -> parks -> zoning -> buildings.
  *
  * Fully in-memory and deterministic per seed. Phase B's persistence service
  * calls this and maps the result onto JPA entities; GridVisualizer calls it
@@ -19,17 +19,23 @@ import java.util.Random;
 @Component
 public class GenerationPipeline {
 
+    private final TerrainGenerator terrainGenerator;
+    private final SettlementPlanner settlementPlanner;
     private final RoadNetworkGenerator roadNetworkGenerator;
     private final BlockSubdivisionService blockSubdivisionService;
     private final LotSubdivisionService lotSubdivisionService;
     private final ZoneAssignmentService zoneAssignmentService;
     private final BuildingPlacementService buildingPlacementService;
 
-    public GenerationPipeline(RoadNetworkGenerator roadNetworkGenerator,
+    public GenerationPipeline(TerrainGenerator terrainGenerator,
+                              SettlementPlanner settlementPlanner,
+                              RoadNetworkGenerator roadNetworkGenerator,
                               BlockSubdivisionService blockSubdivisionService,
                               LotSubdivisionService lotSubdivisionService,
                               ZoneAssignmentService zoneAssignmentService,
                               BuildingPlacementService buildingPlacementService) {
+        this.terrainGenerator = terrainGenerator;
+        this.settlementPlanner = settlementPlanner;
         this.roadNetworkGenerator = roadNetworkGenerator;
         this.blockSubdivisionService = blockSubdivisionService;
         this.lotSubdivisionService = lotSubdivisionService;
@@ -39,9 +45,20 @@ public class GenerationPipeline {
 
     public GenerationResult generate(GenerationConfig config, List<TemplateSpec> catalog, long seed) {
         Random random = new Random(seed);
-        DensityField density = DensityField.of(config);
+        // Built once and threaded through every stage: the core center is
+        // jittered per seed, so independent DensityField.of calls would
+        // disagree on where downtown is.
+        DensityField density = DensityField.of(config, random);
 
-        RoadNetwork network = roadNetworkGenerator.generate(config, random);
+        TerrainResult terrain = terrainGenerator.generate(config, density, random);
+        // Once the river exists, the core stretches along it: the upgraded
+        // field is what every stage from roads onward must see.
+        density = density.withRiver(terrain);
+        // Scatter hamlets and plan the countryside road graph, then fold the
+        // village bumps into the field so the pipeline builds each one.
+        SettlementPlan settlements = settlementPlanner.plan(config, density, terrain, random);
+        density = density.withSettlements(settlements.hamletCores());
+        RoadNetwork network = roadNetworkGenerator.generate(config, density, terrain, settlements, random);
         TileType[][] tiles = network.tiles();
 
         List<Block> blocks = blockSubdivisionService.findBlocks(tiles, config);
@@ -51,7 +68,7 @@ public class GenerationPipeline {
         List<GridPosition> unusedCells = new ArrayList<>();
         for (Block block : blocks) {
             LotSubdivisionService.SubdivisionResult result =
-                    lotSubdivisionService.subdivide(block, tiles, network.roadClasses(), config, random);
+                    lotSubdivisionService.subdivide(block, tiles, network.roadClasses(), config, density, random);
             lots.addAll(result.lots());
             parkCells.addAll(result.parkCells());
             unusedCells.addAll(result.unusedCells());
@@ -82,7 +99,7 @@ public class GenerationPipeline {
         }
 
         zoneAssignmentService.assign(lots, config, density, random);
-        List<BuildingDraft> buildings = buildingPlacementService.place(lots, catalog, tiles, density, random);
+        List<BuildingDraft> buildings = buildingPlacementService.place(lots, catalog, tiles, random);
 
         return new GenerationResult(config, tiles, network.roadClasses(), network.roads(), lots, buildings);
     }

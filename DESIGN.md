@@ -18,6 +18,23 @@ This means the simulation has integrity before player input can distort it.
 - Wants step-by-step explanations for any code provided
 - Wants the full file every time code is given
 - Prefers a senior-developer tone: honest feedback, flag issues early, suggest improvements
+- **QA requirement: after ANY code change, a dedicated quality-assurance review agent must
+  be run over the changed code before presenting the result.** The QA pass checks for
+  bugs, doc/behavior mismatches (e.g. a config value whose javadoc promises something the
+  code doesn't do), broken invariants, and inconsistencies with this design document. Its
+  findings are reported honestly, including the ones that were not fixed.
+  **Scope rule: a QA pass covers ONLY the classes changed (and those directly affected by
+  the change) — never a full re-review of already-verified code.** Verified work is not
+  redone; where possible the same QA agent is resumed with a follow-up instead of starting
+  a fresh full review.
+- **Testing requirement: completed systems get regression test classes so future work
+  cannot silently break older code.** The QA pass includes writing/updating these tests —
+  cheap, deterministic, no Spring context where possible. For the generation pipeline this
+  means **golden-seed tests**: generation is deterministic per seed, so a test locks one
+  seed's summary statistics (lot counts per zone, road/building/park counts) as exact
+  expected values plus the sanity-check invariants. If a deliberate generation change
+  breaks the golden numbers, update the constants in the same commit — the test exists to
+  catch *accidental* changes, not to forbid evolution.
 
 ---
 

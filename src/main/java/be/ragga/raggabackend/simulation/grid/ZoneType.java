@@ -14,5 +14,10 @@ public enum ZoneType {
     // A player-owned lot whose building is currently being built. Live-game
     // state only: the procedural generator builds instantly and never emits
     // this.
-    UNDER_CONSTRUCTION
+    UNDER_CONSTRUCTION,
+
+    // Agricultural parcels on the rural rim - huge, sparse lots assigned by
+    // the generator below the farmland density threshold. Player-ownable
+    // like any other lot (cheap land to develop later).
+    FARMLAND
 }

@@ -10,7 +10,9 @@ import be.ragga.raggabackend.simulation.grid.generation.GenerationSanityCheck;
 import be.ragga.raggabackend.simulation.grid.generation.LotDraft;
 import be.ragga.raggabackend.simulation.grid.generation.LotSubdivisionService;
 import be.ragga.raggabackend.simulation.grid.generation.RoadNetworkGenerator;
+import be.ragga.raggabackend.simulation.grid.generation.SettlementPlanner;
 import be.ragga.raggabackend.simulation.grid.generation.StubTemplateCatalog;
+import be.ragga.raggabackend.simulation.grid.generation.TerrainGenerator;
 import be.ragga.raggabackend.simulation.grid.generation.ZoneAssignmentService;
 import be.ragga.raggabackend.simulation.grid.lot.Direction;
 import be.ragga.raggabackend.simulation.grid.road.RoadClass;
@@ -35,9 +37,19 @@ import java.util.Random;
  */
 public final class GridVisualizer {
 
-    // Each grid cell is drawn as a CELL_SIZE x CELL_SIZE pixel block, so a
-    // 50x50 grid becomes a 500x500 image instead of one too small to read.
-    private static final int CELL_SIZE = 10; // used to be 10
+    // *** CHANGE THIS to scale the output image: each grid cell is drawn as a
+    // CELL_SIZE x CELL_SIZE pixel block, so a 1000x1000 map at CELL_SIZE 10
+    // is a 10000x10000 px PNG. Bigger = more detail, larger file. ***
+    private static final int CELL_SIZE = 5;
+
+    // Safety only: the effective cell size is shrunk below CELL_SIZE just
+    // enough to keep the image under MAX_IMAGE_EDGE px per side. TYPE_INT_RGB
+    // backs the image with ONE int array, so an oversized edge (e.g. 5000
+    // tiles x 10 px = 50000 px) blows past Java's max array length (~2.1B
+    // ints) and can't be allocated. This cap only bites on very large maps;
+    // for normal maps CELL_SIZE is used as-is.
+    private static final int MAX_IMAGE_EDGE = 100_000;
+    private static int cellSize = CELL_SIZE;
 
     // Ground colors per physical tile type (roads shaded by class).
     private static final int COLOR_ROAD_ARTERIAL = 0x22262A;
@@ -46,13 +58,16 @@ public final class GridVisualizer {
     private static final int COLOR_PARK = 0x4CAF50;      // green
     private static final int COLOR_PUBLIC = 0xB39CD8;    // light purple ground
     private static final int COLOR_UNUSED = 0xD3D3D3;    // light gray
+    private static final int COLOR_WATER = 0x3D7EBF;     // river blue
+    private static final int COLOR_FOREST = 0x2E6B34;    // dark woodland green
 
     // Lot ground fill per zone (light shades - buildings get the strong shade).
     private static final Map<ZoneType, Integer> LOT_FILL = Map.of(
             ZoneType.RESIDENTIAL, 0xC8E6C9,      // light green
             ZoneType.COMMERCIAL, 0xBBDEFB,       // light blue
             ZoneType.INDUSTRIAL, 0xFFE0B2,       // light orange
-            ZoneType.UNDER_CONSTRUCTION, 0xFFF59D // yellow (never emitted by the generator)
+            ZoneType.UNDER_CONSTRUCTION, 0xFFF59D, // yellow (never emitted by the generator)
+            ZoneType.FARMLAND, 0xE8DFA0          // wheat
     );
     private static final int COLOR_VACANT_LOT = 0xD9C49B; // tan
 
@@ -61,7 +76,8 @@ public final class GridVisualizer {
             ZoneType.RESIDENTIAL, 0x2E7D32,
             ZoneType.COMMERCIAL, 0x1565C0,
             ZoneType.INDUSTRIAL, 0xE65100,
-            ZoneType.UNDER_CONSTRUCTION, 0xF9A825
+            ZoneType.UNDER_CONSTRUCTION, 0xF9A825,
+            ZoneType.FARMLAND, 0x795548          // barn brown
     );
     private static final int COLOR_BUILDING_PUBLIC = 0x6A1B9A;
 
@@ -78,6 +94,8 @@ public final class GridVisualizer {
         // Pipeline components constructed by hand - they are stateless Spring
         // components, so 'new' works fine without a context.
         GenerationPipeline pipeline = new GenerationPipeline(
+                new TerrainGenerator(),
+                new SettlementPlanner(),
                 new RoadNetworkGenerator(),
                 new BlockSubdivisionService(),
                 new LotSubdivisionService(),
@@ -99,9 +117,23 @@ public final class GridVisualizer {
     }
 
     public static void render(GenerationResult result, String outputPath) throws IOException {
+        ImageIO.write(renderToImage(result), "png", new File(outputPath));
+    }
+
+    public static BufferedImage renderToImage(GenerationResult result) {
+        return renderToImage(result, CELL_SIZE);
+    }
+
+    /**
+     * Renders at the requested cell size (px per tile), shrinking it only when
+     * the image would exceed MAX_IMAGE_EDGE per side. GridContactSheet passes a
+     * small override for thumbnails.
+     */
+    public static BufferedImage renderToImage(GenerationResult result, int requestedCellSize) {
         int width = result.config().width();
         int height = result.config().height();
-        BufferedImage image = new BufferedImage(width * CELL_SIZE, height * CELL_SIZE, BufferedImage.TYPE_INT_RGB);
+        cellSize = Math.clamp(MAX_IMAGE_EDGE / Math.max(width, height), 1, requestedCellSize);
+        BufferedImage image = new BufferedImage(width * cellSize, height * cellSize, BufferedImage.TYPE_INT_RGB);
 
         // 1. Ground layer: every cell colored by its physical tile type.
         for (int x = 0; x < width; x++) {
@@ -119,8 +151,8 @@ public final class GridVisualizer {
             int fill = lot.isVacant() ? COLOR_VACANT_LOT : LOT_FILL.get(lot.getZone());
             fillRect(image, lot.getX(), lot.getY(), lot.getWidth(), lot.getDepth(), fill);
             drawRectBorder(image,
-                    lot.getX() * CELL_SIZE, lot.getY() * CELL_SIZE,
-                    lot.getWidth() * CELL_SIZE, lot.getDepth() * CELL_SIZE,
+                    lot.getX() * cellSize, lot.getY() * cellSize,
+                    lot.getWidth() * cellSize, lot.getDepth() * cellSize,
                     COLOR_LOT_BORDER);
         }
 
@@ -132,13 +164,13 @@ public final class GridVisualizer {
                     : BUILDING_FILL.get(building.template().zone());
             fillRect(image, building.x(), building.y(), building.sizeX(), building.sizeY(), fill);
             drawRectBorder(image,
-                    building.x() * CELL_SIZE, building.y() * CELL_SIZE,
-                    building.sizeX() * CELL_SIZE, building.sizeY() * CELL_SIZE,
+                    building.x() * cellSize, building.y() * cellSize,
+                    building.sizeX() * cellSize, building.sizeY() * cellSize,
                     COLOR_BUILDING_BORDER);
             drawFacingMark(image, building);
         }
 
-        ImageIO.write(image, "png", new File(outputPath));
+        return image;
     }
 
     private static int groundColor(GenerationResult result, int x, int y) {
@@ -153,22 +185,27 @@ public final class GridVisualizer {
             case PUBLIC -> COLOR_PUBLIC;
             case LOT -> COLOR_UNUSED; // overpainted by the lot layer
             case UNUSED -> COLOR_UNUSED;
+            case WATER -> COLOR_WATER;
+            case FOREST -> COLOR_FOREST;
         };
     }
 
     private static void fillCell(BufferedImage image, int cellX, int cellY, int color) {
-        fillPixels(image, cellX * CELL_SIZE, cellY * CELL_SIZE, CELL_SIZE, CELL_SIZE, color);
+        fillPixels(image, cellX * cellSize, cellY * cellSize, cellSize, cellSize, color);
     }
 
     private static void fillRect(BufferedImage image, int cellX, int cellY, int cellsWide, int cellsDeep, int color) {
-        fillPixels(image, cellX * CELL_SIZE, cellY * CELL_SIZE, cellsWide * CELL_SIZE, cellsDeep * CELL_SIZE, color);
+        fillPixels(image, cellX * cellSize, cellY * cellSize, cellsWide * cellSize, cellsDeep * cellSize, color);
     }
 
     private static void fillPixels(BufferedImage image, int px, int py, int w, int h, int color) {
+        // Row-wise fills straight into the image's backing int array - the
+        // per-pixel setRGB version cost seconds on large maps.
+        int[] data = ((java.awt.image.DataBufferInt) image.getRaster().getDataBuffer()).getData();
+        int stride = image.getWidth();
         for (int dy = 0; dy < h; dy++) {
-            for (int dx = 0; dx < w; dx++) {
-                image.setRGB(px + dx, py + dy, color);
-            }
+            int rowStart = (py + dy) * stride + px;
+            java.util.Arrays.fill(data, rowStart, rowStart + w, color);
         }
     }
 
@@ -185,11 +222,17 @@ public final class GridVisualizer {
 
     /** Short white line centered on the building's road-facing edge - its "front door". */
     private static void drawFacingMark(BufferedImage image, BuildingDraft building) {
-        int px = building.x() * CELL_SIZE;
-        int py = building.y() * CELL_SIZE;
-        int w = building.sizeX() * CELL_SIZE;
-        int h = building.sizeY() * CELL_SIZE;
-        int markLength = Math.max(CELL_SIZE / 2, 4);
+        int px = building.x() * cellSize;
+        int py = building.y() * cellSize;
+        int w = building.sizeX() * cellSize;
+        int h = building.sizeY() * cellSize;
+        // Clamped to the footprint: at small cellSize the fixed minimum
+        // would otherwise draw outside 1x1 buildings (and off the image at
+        // the map border).
+        int markLength = Math.min(Math.max(cellSize / 2, 4), Math.min(w, h) - 2);
+        if (markLength < 1) {
+            return;
+        }
 
         Direction facing = building.facing();
         if (facing == Direction.NORTH || facing == Direction.SOUTH) {

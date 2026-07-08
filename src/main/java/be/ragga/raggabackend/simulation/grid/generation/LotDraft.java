@@ -36,7 +36,12 @@ public class LotDraft {
         this.y = y;
         this.width = width;
         this.depth = depth;
-        this.frontages = new EnumMap<>(frontages);
+        // EnumMap's copy constructor rejects an empty plain Map (it can't
+        // infer the enum type) - guard so a frontage-less lot can still be
+        // constructed, e.g. when Phase B rehydrates drafts from entities.
+        this.frontages = frontages.isEmpty()
+                ? new EnumMap<>(Direction.class)
+                : new EnumMap<>(frontages);
     }
 
     public int getX() {

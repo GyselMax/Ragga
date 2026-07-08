@@ -33,29 +33,80 @@ import java.util.Random;
 @Component
 public class RoadNetworkGenerator {
 
-    // Wandering-arterial shape: how far an arterial may stray from its base
-    // line, how often it may sidestep, and how long a drift direction holds.
-    private static final int MAX_DRIFT = 2;
-    private static final double STEP_CHANCE = 0.25;
+    // Wandering-arterial rhythm: how long a drift direction holds. How often
+    // a road sidesteps and how FAR it may stray are density-scaled at runtime
+    // (crooked in the core, straight at the rim), around the configurable
+    // bound GenerationConfig.arterialMaxDrift.
     private static final int DRIFT_HOLD_MIN = 4;
     private static final int DRIFT_HOLD_VARIATION = 5;
 
-    public RoadNetwork generate(GenerationConfig config, Random random) {
-        TileType[][] tiles = new TileType[config.width()][config.height()];
+    // Urban grid gaps: per arterial, up to this many stretches of one to two
+    // block lengths are skipped inside the city, merging the neighboring
+    // blocks into longer rectangles - not every square gets all four roads.
+    private static final int MAX_GRID_GAPS = 2;
+
+    public RoadNetwork generate(GenerationConfig config, DensityField density, TerrainResult terrain,
+                                SettlementPlan settlements, Random random) {
+        // The terrain's pre-seeded grid IS the map array: water and banks are
+        // non-null, so splits/blocks/lots never see them. Only arterials
+        // overwrite water - those tiles are the bridges.
+        TileType[][] tiles = terrain.tiles();
         RoadClass[][] roadClasses = new RoadClass[config.width()][config.height()];
         List<RoadDraft> roads = new ArrayList<>();
-        DensityField density = DensityField.of(config);
 
-        for (int baseX : arterialPositions(config.width(), config, random)) {
-            wanderArterial(baseX, true, config, random, roads, tiles, roadClasses);
+        // Grid arterials: drawn only on urban land (city cores + hamlet
+        // bumps). Countryside roads come exclusively from the settlement plan.
+        for (int base : arterialPositions(config.width(), config, random)) {
+            wanderArterial(base, true, config, density, terrain, random, roads, tiles, roadClasses);
         }
-        for (int baseY : arterialPositions(config.height(), config, random)) {
-            wanderArterial(baseY, false, config, random, roads, tiles, roadClasses);
+        for (int base : arterialPositions(config.height(), config, random)) {
+            wanderArterial(base, false, config, density, terrain, random, roads, tiles, roadClasses);
+        }
+
+        // Destination-driven countryside roads: doglegs between settlements
+        // and out to the map edges, so a rural road always goes somewhere.
+        for (int[] road : settlements.roads()) {
+            drawConnectionRoad(road[0], road[1], road[2], road[3], terrain, roads, tiles, roadClasses);
         }
 
         splitBlocks(config, density, random, roads, tiles, roadClasses);
-        demoteDisconnected(tiles, roadClasses, config);
+        demoteDisconnected(tiles, roadClasses, config, density, roads);
         return new RoadNetwork(roads, tiles, roadClasses);
+    }
+
+    /**
+     * Draws an axis-aligned L-dogleg of ARTERIAL road between two settlement
+     * centers (or a center and a border exit): one straight leg along the
+     * larger delta, then the perpendicular leg, sharing the corner tile so
+     * the run stays 4-connected. Water tiles are drawn as bridges/causeways -
+     * connectivity beats avoiding the occasional short river crossing.
+     */
+    private void drawConnectionRoad(int ax, int ay, int bx, int by, TerrainResult terrain,
+                                    List<RoadDraft> roads, TileType[][] tiles, RoadClass[][] roadClasses) {
+        // Longer axis first reads as the "main direction" of the road.
+        boolean horizontalFirst = Math.abs(bx - ax) >= Math.abs(by - ay);
+        int cornerX = horizontalFirst ? bx : ax;
+        int cornerY = horizontalFirst ? ay : by;
+        drawStraightRun(ax, ay, cornerX, cornerY, roads, tiles, roadClasses);
+        drawStraightRun(cornerX, cornerY, bx, by, roads, tiles, roadClasses);
+    }
+
+    /** One straight axis-aligned ARTERIAL run (inclusive), recorded as a segment. */
+    private void drawStraightRun(int x0, int y0, int x1, int y1,
+                                 List<RoadDraft> roads, TileType[][] tiles, RoadClass[][] roadClasses) {
+        int fromX = Math.min(x0, x1);
+        int toX = Math.max(x0, x1);
+        int fromY = Math.min(y0, y1);
+        int toY = Math.max(y0, y1);
+        roads.add(new RoadDraft(fromX, fromY, toX, toY, RoadClass.ARTERIAL));
+        for (int x = fromX; x <= toX; x++) {
+            for (int y = fromY; y <= toY; y++) {
+                tiles[x][y] = TileType.ROAD;
+                if (roadClasses[x][y] == null || RoadClass.ARTERIAL.ordinal() < roadClasses[x][y].ordinal()) {
+                    roadClasses[x][y] = RoadClass.ARTERIAL;
+                }
+            }
+        }
     }
 
     private List<Integer> arterialPositions(int extent, GenerationConfig config, Random random) {
@@ -77,11 +128,23 @@ public class RoadNetworkGenerator {
      * several steps (momentum) so the road bends gently instead of
      * zigzagging, and it is pulled back toward its base line so parallel
      * arterials can't wander into each other.
+     *
+     * The wander is density-scaled: streets bend visibly inside the old core
+     * (medieval irregularity) and straighten toward the planned outskirts.
+     *
+     * Not every walked tile is drawn: only urban land gets a grid (the
+     * countryside is served by the settlement plan's connection roads), and
+     * inside the city each arterial may skip a couple of block-length gaps
+     * (see shouldDraw). The walk itself always runs the full map so parallel
+     * arterials keep their spacing rhythm regardless.
      */
-    private void wanderArterial(int basePos, boolean vertical, GenerationConfig config, Random random,
+    private void wanderArterial(int basePos, boolean vertical,
+                                GenerationConfig config, DensityField density, TerrainResult terrain,
+                                Random random,
                                 List<RoadDraft> roads, TileType[][] tiles, RoadClass[][] roadClasses) {
         int length = vertical ? config.height() : config.width();
         int crossExtent = vertical ? config.width() : config.height();
+        List<int[]> gaps = rollGridGaps(length, config, random);
 
         int pos = basePos;
         int driftDirection = 0;
@@ -102,38 +165,100 @@ public class RoadNetworkGenerator {
             }
             driftHold--;
 
+            double d = density.at(vertical ? pos : step, vertical ? step : pos);
+            double stepChance = 0.10 + 0.35 * d;
+            int maxDrift = (int) Math.round(config.arterialMaxDrift() * (0.5 + d));
+
             boolean shift = driftDirection != 0
-                    && random.nextDouble() < STEP_CHANCE
-                    && Math.abs(pos + driftDirection - basePos) <= MAX_DRIFT
+                    && random.nextDouble() < stepChance
+                    && Math.abs(pos + driftDirection - basePos) <= maxDrift
                     && pos + driftDirection >= 1
                     && pos + driftDirection <= crossExtent - 2;
 
             if (shift) {
-                // Close the straight run up to the previous step, then mark
-                // the sideways connector tile on the current step's row so
-                // the road stays 4-connected through the bend.
-                addSegment(pos, runStart, pos, step - 1, vertical, roads, tiles, roadClasses);
+                // Close the straight run INCLUDING the current step's row -
+                // that tile is the sideways connector keeping the road
+                // 4-connected through the bend, and it must belong to a
+                // segment (tiles are always derived from segments; a tile
+                // owned by no segment would vanish when Phase B re-derives
+                // tiles from persisted RoadSegments).
+                addSegment(pos, runStart, step, vertical, gaps, config, density, terrain,
+                        roads, tiles, roadClasses);
                 pos += driftDirection;
-                markTile(pos - driftDirection, step, vertical, tiles, roadClasses);
                 runStart = step;
             }
         }
-        addSegment(pos, runStart, pos, length - 1, vertical, roads, tiles, roadClasses);
+        addSegment(pos, runStart, length - 1, vertical, gaps, config, density, terrain,
+                roads, tiles, roadClasses);
     }
 
-    /** Adds a straight arterial run; coordinates are (cross, along) pairs translated per orientation. */
-    private void addSegment(int cross0, int along0, int cross1, int along1, boolean vertical,
+    /**
+     * Adds a straight arterial run, split into the sub-runs that actually
+     * pass the draw filter; coordinates are (cross, along) pairs translated
+     * per orientation.
+     */
+    private void addSegment(int cross, int along0, int along1, boolean vertical,
+                            List<int[]> gaps, GenerationConfig config, DensityField density,
+                            TerrainResult terrain,
                             List<RoadDraft> roads, TileType[][] tiles, RoadClass[][] roadClasses) {
-        if (along1 < along0) {
-            return;
+        int drawStart = -1;
+        for (int along = along0; along <= along1 + 1; along++) {
+            boolean draw = along <= along1
+                    && shouldDraw(cross, along, vertical, gaps, config, density, terrain, tiles);
+            if (draw && drawStart < 0) {
+                drawStart = along;
+            } else if (!draw && drawStart >= 0) {
+                roads.add(vertical
+                        ? new RoadDraft(cross, drawStart, cross, along - 1, RoadClass.ARTERIAL)
+                        : new RoadDraft(drawStart, cross, along - 1, cross, RoadClass.ARTERIAL));
+                for (int a = drawStart; a < along; a++) {
+                    markTile(cross, a, vertical, tiles, roadClasses);
+                }
+                drawStart = -1;
+            }
         }
-        RoadDraft road = vertical
-                ? new RoadDraft(cross0, along0, cross1, along1, RoadClass.ARTERIAL)
-                : new RoadDraft(along0, cross0, along1, cross1, RoadClass.ARTERIAL);
-        roads.add(road);
-        for (int along = along0; along <= along1; along++) {
-            markTile(cross0, along, vertical, tiles, roadClasses);
+    }
+
+    /**
+     * Grid arterials draw only on urban land - city cores and hamlet bumps.
+     * The countryside is left to the settlement plan's connection roads, so
+     * a rural road always goes somewhere. Water is only drawn over by
+     * arterials PERPENDICULAR to the river (those tiles are the bridges);
+     * parallel arterials break where the meander crosses their line and
+     * resume beyond, so the riverside keeps its full road density without
+     * roads running lengthwise in the water. On urban land everything else is
+     * drawn except the rolled grid gaps, which merge neighboring blocks into
+     * longer rectangles - bridges are never gapped.
+     */
+    private boolean shouldDraw(int cross, int along, boolean vertical,
+                               List<int[]> gaps, GenerationConfig config, DensityField density,
+                               TerrainResult terrain, TileType[][] tiles) {
+        int x = vertical ? cross : along;
+        int y = vertical ? along : cross;
+        if (density.at(x, y) < config.farmlandDensityThreshold()) {
+            return false;
         }
+        if (tiles[x][y] == TileType.WATER) {
+            return terrain.mayBridge(vertical);
+        }
+        for (int[] gap : gaps) {
+            if (along >= gap[0] && along <= gap[1]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Up to MAX_GRID_GAPS skipped stretches of one to two block lengths per arterial. */
+    private List<int[]> rollGridGaps(int length, GenerationConfig config, Random random) {
+        List<int[]> gaps = new ArrayList<>();
+        int count = random.nextInt(MAX_GRID_GAPS + 1);
+        for (int i = 0; i < count; i++) {
+            int gapLength = config.arterialSpacing() + random.nextInt(config.arterialSpacing() + 1);
+            int start = random.nextInt(Math.max(1, length - gapLength));
+            gaps.add(new int[]{start, start + gapLength - 1});
+        }
+        return gaps;
     }
 
     private void markTile(int cross, int along, boolean vertical, TileType[][] tiles, RoadClass[][] roadClasses) {
@@ -157,7 +282,11 @@ public class RoadNetworkGenerator {
      */
     private void splitBlocks(GenerationConfig config, DensityField density, Random random,
                              List<RoadDraft> roads, TileType[][] tiles, RoadClass[][] roadClasses) {
-        for (int depth = 1; depth <= config.maxLocalRoadDepth(); depth++) {
+        // One round beyond the configured depth runs for the dense core only:
+        // downtown blocks split once more than the rest of the city, so the
+        // core reads as fine grain even from map scale.
+        for (int depth = 1; depth <= config.maxLocalRoadDepth() + 1; depth++) {
+            boolean coreOnlyRound = depth > config.maxLocalRoadDepth();
             RoadClass roadClass = depth == 1 ? RoadClass.COLLECTOR : RoadClass.LOCAL;
 
             for (List<GridPosition> region : RegionUtils.untypedRegions(tiles)) {
@@ -170,6 +299,14 @@ public class RoadNetworkGenerator {
                 if (Math.max(rectW, rectH) < config.minBlockSizeForSplit()) {
                     continue;
                 }
+                // Both halves must be able to hold a lot; without this guard a
+                // low minBlockSizeForSplit makes the clamp below crash
+                // (min > max) on blocks big enough to qualify but too small
+                // to actually split.
+                int minHalf = config.minLotWidth() + 1;
+                if (Math.max(rectW, rectH) < 2 * minHalf + 1) {
+                    continue;
+                }
 
                 int centerX = (rect[0] + rect[2]) / 2;
                 int centerY = (rect[1] + rect[3]) / 2;
@@ -178,6 +315,14 @@ public class RoadNetworkGenerator {
                 // chance at the edge - the unsplit outskirt blocks are where
                 // the large parks come from.
                 double d = density.at(centerX, centerY);
+                // The farm belt keeps its huge arterial-to-arterial blocks:
+                // fields are not street grids.
+                if (d < config.farmlandDensityThreshold()) {
+                    continue;
+                }
+                if (coreOnlyRound && d <= 0.8) {
+                    continue;
+                }
                 double normalized = (d - config.edgeDensity()) / (1.0 - config.edgeDensity());
                 double halfBase = config.blockSplitChance() * 0.5;
                 double splitChance = halfBase + (1.0 - halfBase) * Math.clamp(normalized, 0.0, 1.0);
@@ -185,8 +330,6 @@ public class RoadNetworkGenerator {
                     continue;
                 }
 
-                // Halves must stay wide enough to hold at least one strip of lots.
-                int minHalf = config.minLotWidth() + 1;
                 int jitter = random.nextInt(config.arterialJitter() * 2 + 1) - config.arterialJitter();
                 boolean cutVertically = rectW >= rectH;
                 int split = cutVertically
@@ -239,43 +382,82 @@ public class RoadNetworkGenerator {
      * produce disconnected roads, but a "road to nowhere" granting lots
      * frontage would be a silent lie, so this guarantees it can't happen.
      */
-    private void demoteDisconnected(TileType[][] tiles, RoadClass[][] roadClasses, GenerationConfig config) {
+    private void demoteDisconnected(TileType[][] tiles, RoadClass[][] roadClasses, GenerationConfig config,
+                                    DensityField density, List<RoadDraft> roads) {
         int width = config.width();
         int height = config.height();
-        boolean[][] reached = new boolean[width][height];
 
-        Deque<int[]> queue = new ArrayDeque<>();
-        outer:
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                if (tiles[x][y] == TileType.ROAD) {
-                    queue.add(new int[]{x, y});
-                    reached[x][y] = true;
-                    break outer;
+        // Label every connected road component and keep only the LARGEST.
+        // Anything else (isolated bridge stubs, orphaned village streets) is
+        // demoted. Never seed from a single tile chosen by scan order or by
+        // density: both have kept a stray fragment and demoted the entire
+        // city (seen in the wild on contact sheets) - the city is always the
+        // biggest component by orders of magnitude, so size is the one
+        // criterion that cannot pick wrong.
+        int[][] component = new int[width][height];
+        int componentCount = 0;
+        int bestComponent = 0;
+        int bestSize = 0;
+
+        for (int sx = 0; sx < width; sx++) {
+            for (int sy = 0; sy < height; sy++) {
+                if (tiles[sx][sy] != TileType.ROAD || component[sx][sy] != 0) {
+                    continue;
+                }
+                int label = ++componentCount;
+                int size = 0;
+                Deque<int[]> queue = new ArrayDeque<>();
+                queue.add(new int[]{sx, sy});
+                component[sx][sy] = label;
+                while (!queue.isEmpty()) {
+                    int[] cell = queue.poll();
+                    size++;
+                    for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+                        int nx = cell[0] + d[0];
+                        int ny = cell[1] + d[1];
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height
+                                && tiles[nx][ny] == TileType.ROAD && component[nx][ny] == 0) {
+                            component[nx][ny] = label;
+                            queue.add(new int[]{nx, ny});
+                        }
+                    }
+                }
+                if (size > bestSize) {
+                    bestSize = size;
+                    bestComponent = label;
                 }
             }
         }
 
-        while (!queue.isEmpty()) {
-            int[] cell = queue.poll();
-            for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
-                int nx = cell[0] + d[0];
-                int ny = cell[1] + d[1];
-                if (nx >= 0 && nx < width && ny >= 0 && ny < height
-                        && tiles[nx][ny] == TileType.ROAD && !reached[nx][ny]) {
-                    reached[nx][ny] = true;
-                    queue.add(new int[]{nx, ny});
-                }
-            }
-        }
-
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                if (tiles[x][y] == TileType.ROAD && !reached[x][y]) {
+                if (tiles[x][y] == TileType.ROAD && component[x][y] != bestComponent) {
                     tiles[x][y] = null;
                     roadClasses[x][y] = null;
                 }
             }
         }
+
+        // Segments whose tiles were demoted must go too, or the segment list
+        // (the authoritative graph Phase B persists) would claim roads whose
+        // tiles no longer exist. A straight run is internally 4-connected,
+        // so a segment is always demoted whole - checking one tile suffices,
+        // but check all of them to be safe.
+        roads.removeIf(road -> {
+            int stepX = Integer.signum(road.x1() - road.x0());
+            int stepY = Integer.signum(road.y1() - road.y0());
+            int x = road.x0();
+            int y = road.y0();
+            while (true) {
+                if (tiles[x][y] != TileType.ROAD) {
+                    return true;
+                }
+                if (x == road.x1() && y == road.y1()) {
+                    return false;
+                }
+                x += stepX;
+                y += stepY;
+            }
+        });
     }
 }

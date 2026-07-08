@@ -6,6 +6,7 @@ import be.ragga.raggabackend.simulation.grid.ZoneType;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,31 +22,40 @@ public final class GenerationSanityCheck {
 
     public static void run(GenerationResult result) {
         System.out.println("--- generation sanity check ---");
-        checkEveryLotHasFrontage(result);
-        checkOccupiedLotsHaveBuildings(result);
-        checkFootprintsInsideLots(result);
-        checkNoFootprintOverlap(result);
-        checkNoBuildingOnImmutableTiles(result);
-        checkRoadConnectivity(result);
+        violations(result).forEach(GenerationSanityCheck::report);
         printSummary(result);
     }
 
-    private static void checkEveryLotHasFrontage(GenerationResult result) {
-        long violations = result.lots().stream()
+    /**
+     * Check name -> violation count (0 = PASS), in display order. Public so
+     * regression tests can assert on the invariants directly instead of
+     * parsing console output.
+     */
+    public static Map<String, Long> violations(GenerationResult result) {
+        Map<String, Long> checks = new LinkedHashMap<>();
+        checks.put("every lot has road frontage", checkEveryLotHasFrontage(result));
+        checks.put("every non-vacant lot has a building", checkOccupiedLotsHaveBuildings(result));
+        checks.put("every footprint stays inside its own lot", checkFootprintsInsideLots(result));
+        checks.put("no two building footprints overlap", checkNoFootprintOverlap(result));
+        checks.put("no footprint cell sits on a road/park tile", checkNoBuildingOnImmutableTiles(result));
+        checks.put("road network is fully connected", checkRoadConnectivity(result));
+        return checks;
+    }
+
+    private static long checkEveryLotHasFrontage(GenerationResult result) {
+        return result.lots().stream()
                 .filter(lot -> lot.getFrontages().isEmpty())
                 .count();
-        report("every lot has road frontage", violations);
     }
 
-    private static void checkOccupiedLotsHaveBuildings(GenerationResult result) {
-        long violations = result.lots().stream()
+    private static long checkOccupiedLotsHaveBuildings(GenerationResult result) {
+        return result.lots().stream()
                 .filter(lot -> !lot.isVacant() && lot.getBuilding() == null)
                 .count();
-        report("every non-vacant lot has a building", violations);
     }
 
-    private static void checkFootprintsInsideLots(GenerationResult result) {
-        long violations = result.lots().stream()
+    private static long checkFootprintsInsideLots(GenerationResult result) {
+        return result.lots().stream()
                 .filter(lot -> lot.getBuilding() != null)
                 .filter(lot -> {
                     BuildingDraft b = lot.getBuilding();
@@ -54,28 +64,32 @@ public final class GenerationSanityCheck {
                             || b.y() + b.sizeY() > lot.getY() + lot.getDepth();
                 })
                 .count();
-        report("every footprint stays inside its own lot", violations);
     }
 
-    private static void checkNoFootprintOverlap(GenerationResult result) {
-        // Brute-force rectangle intersection - trivially fast at this scale.
-        List<BuildingDraft> buildings = result.buildings();
+    private static long checkNoFootprintOverlap(GenerationResult result) {
+        // Sweep over x-sorted buildings: once the next building starts past
+        // this one's right edge, nothing later can overlap it either. Keeps
+        // the check fast on large maps (tens of thousands of buildings).
+        List<BuildingDraft> sorted = new java.util.ArrayList<>(result.buildings());
+        sorted.sort(java.util.Comparator.comparingInt(BuildingDraft::x));
+
         long violations = 0;
-        for (int i = 0; i < buildings.size(); i++) {
-            for (int j = i + 1; j < buildings.size(); j++) {
-                BuildingDraft a = buildings.get(i);
-                BuildingDraft b = buildings.get(j);
-                boolean overlap = a.x() < b.x() + b.sizeX() && b.x() < a.x() + a.sizeX()
-                        && a.y() < b.y() + b.sizeY() && b.y() < a.y() + a.sizeY();
-                if (overlap) {
+        for (int i = 0; i < sorted.size(); i++) {
+            BuildingDraft a = sorted.get(i);
+            for (int j = i + 1; j < sorted.size(); j++) {
+                BuildingDraft b = sorted.get(j);
+                if (b.x() >= a.x() + a.sizeX()) {
+                    break;
+                }
+                if (a.y() < b.y() + b.sizeY() && b.y() < a.y() + a.sizeY()) {
                     violations++;
                 }
             }
         }
-        report("no two building footprints overlap", violations);
+        return violations;
     }
 
-    private static void checkNoBuildingOnImmutableTiles(GenerationResult result) {
+    private static long checkNoBuildingOnImmutableTiles(GenerationResult result) {
         // ROAD and PARK may never carry a building; PUBLIC only carries the
         // public building whose parcel it is.
         long violations = 0;
@@ -89,10 +103,10 @@ public final class GenerationSanityCheck {
                 }
             }
         }
-        report("no footprint cell sits on a road/park tile", violations);
+        return violations;
     }
 
-    private static void checkRoadConnectivity(GenerationResult result) {
+    private static long checkRoadConnectivity(GenerationResult result) {
         TileType[][] tiles = result.tiles();
         int width = result.config().width();
         int height = result.config().height();
@@ -112,8 +126,7 @@ public final class GenerationSanityCheck {
             }
         }
         if (total == 0) {
-            report("road network is fully connected", 1);
-            return;
+            return 1;
         }
 
         boolean[][] reached = new boolean[width][height];
@@ -134,7 +147,7 @@ public final class GenerationSanityCheck {
                 }
             }
         }
-        report("road network is fully connected", total - reachedCount);
+        return total - reachedCount;
     }
 
     private static void printSummary(GenerationResult result) {

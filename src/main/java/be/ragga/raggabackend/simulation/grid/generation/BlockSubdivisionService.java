@@ -11,8 +11,9 @@ import java.util.List;
 
 /**
  * Stage 2: flood-fills the space between roads into contiguous blocks.
- * Blocks below the minimum area become UNUSED immediately - they are too
- * small to ever hold a lot and would only produce degenerate slivers.
+ * Blocks below the minimum area are too small to ever hold a lot and become
+ * roadside PARK strips immediately (green pockets read better than dead
+ * gray slivers, and bent arterials produce many of them).
  */
 @Component
 public class BlockSubdivisionService {

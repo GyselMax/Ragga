@@ -21,7 +21,15 @@ public enum TileType {
     PUBLIC,
 
     // Leftover sliver too small to be anything.
-    UNUSED;
+    UNUSED,
+
+    // River/lake water carved by the terrain stage, before any road exists.
+    // Never buildable, never a lot; only arterial bridges may cross it.
+    WATER,
+
+    // Woodland carved by the terrain stage where density is low - the
+    // corners and the rural rim. Never buildable; arterials cut through.
+    FOREST;
 
     /**
      * Only LOT cells can ever receive a building footprint. ROAD, PARK and
