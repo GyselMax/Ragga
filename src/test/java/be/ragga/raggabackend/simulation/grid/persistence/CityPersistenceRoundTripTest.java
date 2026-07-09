@@ -1,12 +1,17 @@
 package be.ragga.raggabackend.simulation.grid.persistence;
 
 import be.ragga.raggabackend.simulation.City;
+import be.ragga.raggabackend.simulation.building.simulated.SimulatedHighRise;
+import be.ragga.raggabackend.simulation.building.simulated.SimulatedLowRise;
+import be.ragga.raggabackend.simulation.building.simulated.SimulatedResidential;
 import be.ragga.raggabackend.simulation.grid.CityRepository;
 import be.ragga.raggabackend.simulation.grid.GridCell;
 import be.ragga.raggabackend.simulation.grid.TileType;
+import be.ragga.raggabackend.simulation.grid.ZoneType;
 import be.ragga.raggabackend.simulation.grid.generation.*;
 import be.ragga.raggabackend.simulation.grid.persistence.catalog.BuildingTemplate;
 import be.ragga.raggabackend.simulation.grid.persistence.catalog.BuildingTemplateRepository;
+import be.ragga.raggabackend.simulation.grid.persistence.entity.PlacedBuilding;
 import be.ragga.raggabackend.simulation.grid.persistence.mapping.GenerationResultMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,6 +83,37 @@ class CityPersistenceRoundTripTest {
         assertEquals(result.lots().size(), reloaded.getLots().size(), "lot count matches");
         assertEquals(result.roads().size(), reloaded.getRoads().size(), "road count matches");
         assertEquals(result.buildings().size(), reloaded.getBuildings().size(), "building count matches");
+
+        // Every residential placement must be bridged to a SimulatedResidential
+        // with a real household capacity and at least one bedroom per household,
+        // and the concrete subtype must match its blueprint's floors against the
+        // high-rise cutoff; every non-residential placement must stay
+        // physical-only (no bridge yet).
+        long residentialPlacements = 0;
+        for (PlacedBuilding placed : reloaded.getBuildings()) {
+            boolean isResidential = placed.getTemplate().getZone() == ZoneType.RESIDENTIAL;
+            if (isResidential) {
+                residentialPlacements++;
+                assertNotNull(placed.getBuilding(), "residential placement must have a linked Building");
+                assertInstanceOf(SimulatedResidential.class, placed.getBuilding(),
+                        "residential placement must be bridged to a SimulatedResidential");
+                SimulatedResidential residential = (SimulatedResidential) placed.getBuilding();
+                assertTrue(residential.getHouseholdCapacity() > 0, "household capacity must be positive");
+                assertTrue(residential.getBedroomsPerHousehold() >= 1, "bedrooms per household must be at least 1");
+                assertEquals(placed.getTemplate().getFloors(), residential.getFloors(),
+                        "floors must be copied from the blueprint");
+                Class<?> expectedSubtype =
+                        placed.getTemplate().getFloors() >= SimulatedResidential.HIGH_RISE_MIN_FLOORS
+                                ? SimulatedHighRise.class : SimulatedLowRise.class;
+                assertInstanceOf(expectedSubtype, residential,
+                        "subtype must follow the blueprint's floors (template "
+                                + placed.getTemplate().getCode() + ")");
+            } else {
+                assertNull(placed.getBuilding(), "non-residential placement must not be bridged yet");
+            }
+        }
+        assertEquals(residentialPlacements, reloaded.getSimulatedBuildings().size(),
+                "simulatedBuildings count must match the number of residential placements");
 
         // The real proof: the stored cells rebuild the exact same map.
         TileType[][] rebuilt = new TileType[SIZE][SIZE];

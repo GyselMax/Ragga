@@ -1,5 +1,6 @@
 package be.ragga.raggabackend.simulation;
 
+import be.ragga.raggabackend.simulation.building.Building;
 import be.ragga.raggabackend.simulation.grid.GridCell;
 import be.ragga.raggabackend.simulation.grid.generation.GenerationConfig;
 import be.ragga.raggabackend.simulation.grid.persistence.entity.Lot;
@@ -57,6 +58,14 @@ public class City {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "city_id")
     private List<PlacedBuilding> buildings = new ArrayList<>();
+
+    // The economic Building instances bridged from PlacedBuilding placements
+    // (currently residential only - see GenerationResultMapper). Additive,
+    // separate from `buildings` (the physical PlacedBuilding list) so
+    // CitySummary.buildingCount's existing meaning doesn't shift.
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "city_id")
+    private List<Building> simulatedBuildings = new ArrayList<>();
 
     public long getId() {
         return id;
@@ -124,5 +133,13 @@ public class City {
 
     public void setBuildings(List<PlacedBuilding> buildings) {
         this.buildings = buildings;
+    }
+
+    public List<Building> getSimulatedBuildings() {
+        return simulatedBuildings;
+    }
+
+    public void setSimulatedBuildings(List<Building> simulatedBuildings) {
+        this.simulatedBuildings = simulatedBuildings;
     }
 }

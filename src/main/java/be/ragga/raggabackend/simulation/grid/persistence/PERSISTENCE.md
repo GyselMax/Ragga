@@ -14,6 +14,8 @@ UI at `/swagger-ui/index.html`):
 - `POST /cities/generate` — generate + store a new city, returns a summary (including the
   seed). Pass `?seed=<n>` to reproduce a specific map.
 - `GET /cities/{id}` — read a stored city's summary.
+- `GET /cities/{id}/render` — the stored city as a PNG (same color legend as
+  `GridVisualizer`, see GENERATION.md). `?cellSize=<px per tile>` (1-10, default 4).
 
 The full store→reload path is covered by `CityPersistenceRoundTripTest` (runs on in-memory
 H2, no live DB needed).
@@ -28,8 +30,9 @@ an entity:
 | `tiles[x][y]` (`TileType`) | `GridCell` (one row per tile) | the physical raster of record |
 | `LotDraft` | `Lot` | frontages & zone-lock dropped (generation-time only) |
 | `RoadDraft` | `RoadSegment` | |
-| `BuildingDraft` | `PlacedBuilding` | physical placement only; links to its `Lot` + `BuildingTemplate` |
-| `TemplateSpec` | `BuildingTemplate` | the DB catalog, seeded from `StubTemplateCatalog` |
+| `BuildingDraft` | `PlacedBuilding` | physical placement; links to its `Lot` + `BuildingTemplate`, and (residential only) to its economic `Building` instance |
+| `BuildingDraft` (residential) | `SimulatedLowRise` / `SimulatedHighRise` | the economic bridge: floors + householdCapacity from the blueprint, bedrooms derived; split by `SimulatedResidential.HIGH_RISE_MIN_FLOORS` |
+| `TemplateSpec` | `BuildingTemplate` | the DB catalog, seeded from `StubTemplateCatalog`; carries footprint + floors + householdCapacity |
 | `GenerationConfig` | JSON column on `City` | provenance — reproduces the exact map with the seed |
 
 `roadClasses[x][y]` is **not** stored: it is rebuildable from the `RoadSegment`s.
@@ -38,9 +41,16 @@ an entity:
 
 - **`GridCell` is physical-only** (`tileType`). Zoning lives on `Lot`, never on a cell —
   matching the domain rule in `TileType`/`ZoneType`.
-- **`PlacedBuilding` is separate from the `Building` economic hierarchy.** It records only
-  *what was stamped where*; price/rent/desirability belong to a later economic phase that
-  can attach to a placement.
+- **`PlacedBuilding` stays the physical record; the `Building` hierarchy is the economic one.**
+  A placement records *what was stamped where*; the nullable `PlacedBuilding.building` link
+  attaches the economic instance. Today only residential placements are bridged (to
+  `SimulatedLowRise`/`SimulatedHighRise`, split by the blueprint's floors); price/rent/
+  desirability stay null until the land-value/rent-formula phase, and commercial/industrial/
+  farm/public placements stay physical-only.
+- **The catalog seeder also backfills.** `ddl-auto=update` adds new columns (floors,
+  householdCapacity) with 0 on rows seeded before the column existed; on boot the seeder
+  fills stub-known rows still at 0 from `StubTemplateCatalog`, never touching hand-edited
+  nonzero values.
 - **Zoning per cell is not duplicated.** A cell only knows its `TileType`; to find a
   tile's zone, look up the `Lot` covering it.
 

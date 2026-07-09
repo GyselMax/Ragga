@@ -20,7 +20,12 @@ public record CitySummary(
         long gridCellCount,
         int lotCount,
         int roadCount,
-        int buildingCount
+        int buildingCount,
+        // NOTE: accurate only while City.simulatedBuildings is residential-only
+        // (see GenerationResultMapper.mapBuilding). Add a zone/type filter here
+        // once commercial/industrial bridging lands, or this will silently
+        // start counting non-residential buildings too.
+        int simulatedResidentialCount
 ) {
 
     public static CitySummary of(City city) {
@@ -41,6 +46,7 @@ public record CitySummary(
                 gridCellCount,
                 city.getLots().size(),
                 city.getRoads().size(),
-                city.getBuildings().size());
+                city.getBuildings().size(),
+                city.getSimulatedBuildings().size());
     }
 }

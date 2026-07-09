@@ -18,8 +18,17 @@ import be.ragga.raggabackend.simulation.grid.ZoneType;
  *                  PUBLIC tiles instead of zoned lots
  * @param width     canonical (unrotated) footprint width in tiles
  * @param depth     canonical (unrotated) footprint depth in tiles
+ * @param floors    vertical extent in floors, authored per blueprint. Placement
+ *                  ignores it (footprint-only fitting); it drives the low-rise vs
+ *                  high-rise split, the bedrooms-per-household derivation (floor
+ *                  area = width x depth x floors), and the box height of future
+ *                  3D/browser renders (height = floors x a floor-height constant)
+ * @param householdCapacity number of households this building holds once occupied;
+ *                  meaningful only for RESIDENTIAL templates, 0 for every other zone
+ *                  and for public-use templates
  */
-public record TemplateSpec(String code, ZoneType zone, boolean publicUse, int width, int depth) {
+public record TemplateSpec(String code, ZoneType zone, boolean publicUse, int width, int depth,
+                           int floors, int householdCapacity) {
 
     public int area() {
         return width * depth;

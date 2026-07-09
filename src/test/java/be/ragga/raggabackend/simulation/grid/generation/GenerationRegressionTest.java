@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Golden-seed regression tests for the generation pipeline (see DESIGN.md,
+ * Golden-seed regression tests for the generation pipeline (see design/design-2.0.md,
  * testing requirement). Generation is fully deterministic per seed, so one
  * known seed's output statistics are locked in as exact expected values.
  *
@@ -33,21 +33,23 @@ class GenerationRegressionTest {
     private static final int SIZE = 400;
 
     // Golden numbers for defaults(400, 400), seed 42.
-    // Last updated: split vacancy into coreVacantRatio / edgeVacantRatio
-    // (independent core/edge build-out); shifted VACANT and BUILDINGS slightly.
-    private static final int GOLDEN_LOTS = 2671;
-    private static final int GOLDEN_RESIDENTIAL = 1397;
-    private static final int GOLDEN_COMMERCIAL = 763;
-    private static final int GOLDEN_INDUSTRIAL = 374;
-    private static final int GOLDEN_FARMLAND = 137;
-    private static final int GOLDEN_VACANT = 216;
-    private static final int GOLDEN_PUBLIC_SITES = 134;
-    private static final int GOLDEN_BUILDINGS = 2455;
-    private static final int GOLDEN_ROAD_SEGMENTS = 795;
-    private static final int GOLDEN_ROAD_TILES = 11172;
-    private static final int GOLDEN_PARK_TILES = 46102;
-    private static final int GOLDEN_WATER_TILES = 4879;
-    private static final int GOLDEN_FOREST_TILES = 31989;
+    // Last updated: re-derived after the multi-core defaults (maxCityRadius,
+    // cityCount/satellites/hamlets, arterialSpacing 55) and the enlarged
+    // template catalog (highrise/mansions/megamall/megafactory) landed - both
+    // deliberate generation changes that shifted every stat.
+    private static final int GOLDEN_LOTS = 1950;
+    private static final int GOLDEN_RESIDENTIAL = 952;
+    private static final int GOLDEN_COMMERCIAL = 640;
+    private static final int GOLDEN_INDUSTRIAL = 265;
+    private static final int GOLDEN_FARMLAND = 93;
+    private static final int GOLDEN_VACANT = 159;
+    private static final int GOLDEN_PUBLIC_SITES = 98;
+    private static final int GOLDEN_BUILDINGS = 1791;
+    private static final int GOLDEN_ROAD_SEGMENTS = 803;
+    private static final int GOLDEN_ROAD_TILES = 10071;
+    private static final int GOLDEN_PARK_TILES = 50611;
+    private static final int GOLDEN_WATER_TILES = 4591;
+    private static final int GOLDEN_FOREST_TILES = 41015;
 
     private static GenerationResult result;
 

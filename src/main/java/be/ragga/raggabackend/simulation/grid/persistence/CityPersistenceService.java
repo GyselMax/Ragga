@@ -11,6 +11,7 @@ import be.ragga.raggabackend.simulation.grid.persistence.catalog.BuildingTemplat
 import be.ragga.raggabackend.simulation.grid.persistence.catalog.BuildingTemplateRepository;
 import be.ragga.raggabackend.simulation.grid.persistence.catalog.TemplateCatalog;
 import be.ragga.raggabackend.simulation.grid.persistence.mapping.GenerationResultMapper;
+import be.ragga.raggabackend.simulation.grid.persistence.web.CityPngRenderer;
 import be.ragga.raggabackend.simulation.grid.persistence.web.CitySummary;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,19 +37,22 @@ public class CityPersistenceService {
     private final GenerationResultMapper mapper;
     private final CityRepository cityRepository;
     private final CityGridConfig gridConfig;
+    private final CityPngRenderer pngRenderer;
 
     public CityPersistenceService(GenerationPipeline pipeline,
                                   TemplateCatalog templateCatalog,
                                   BuildingTemplateRepository templateRepository,
                                   GenerationResultMapper mapper,
                                   CityRepository cityRepository,
-                                  CityGridConfig gridConfig) {
+                                  CityGridConfig gridConfig,
+                                  CityPngRenderer pngRenderer) {
         this.pipeline = pipeline;
         this.templateCatalog = templateCatalog;
         this.templateRepository = templateRepository;
         this.mapper = mapper;
         this.cityRepository = cityRepository;
         this.gridConfig = gridConfig;
+        this.pngRenderer = pngRenderer;
     }
 
     /**
@@ -84,5 +88,15 @@ public class CityPersistenceService {
     @Transactional(readOnly = true)
     public Optional<CitySummary> getSummary(long id) {
         return cityRepository.findById(id).map(CitySummary::of);
+    }
+
+    /**
+     * Renders a stored city to a PNG (see {@link CityPngRenderer}). Runs in a
+     * transaction because rendering walks every lazy child collection,
+     * including the full ~width x height grid raster.
+     */
+    @Transactional(readOnly = true)
+    public Optional<byte[]> renderPng(long id, int cellSize) {
+        return cityRepository.findById(id).map(city -> pngRenderer.render(city, cellSize));
     }
 }
