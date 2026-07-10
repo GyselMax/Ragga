@@ -323,12 +323,15 @@ browser**:
   tuning the live game's balance uses the same workflow.
 - This pairs with the DB-seeded template catalog and the future admin layer: the same
   browser tooling direction eventually serves admins tuning a running world.
-- **Update:** `POST /cities/generate`, `GET /cities/{id}` and `GET /cities/{id}/render`
-  now exist ([CityGenerationController](../src/main/java/be/ragga/raggabackend/simulation/grid/persistence/web/CityGenerationController.java)).
-  The render endpoint returns a stored city as a PNG (`CityPngRenderer`, same color legend
-  as `GridVisualizer`, `?cellSize=1..10`) — the first browser-viewable slice of this
-  tooling. Generation still only takes a `seed`; the full tunable-params + slider UI is
-  future work, as are the real 3D renders (blueprints now carry `floors` for those).
+- **Update:** the API + browser tooling now exist
+  ([CityGenerationController](../src/main/java/be/ragga/raggabackend/simulation/grid/persistence/web/CityGenerationController.java)).
+  `POST /cities/generate` + `GET /cities/{id}` (persist/read), `GET /cities/{id}/render`
+  (stored city → PNG, `CityPngRenderer`), and the **interactive tuner at `/tuner.html`**:
+  a live slider panel over every `GenerationConfig` knob, backed by
+  `GET /cities/preview/render` (in-memory, non-persisting) and `GET /cities/preview/defaults`.
+  This delivers the "change a value, see the city immediately — no IDE, no recompile" goal
+  above. Still future: exposing **balance** values the same way once economy systems exist,
+  and real 3D renders (blueprints now carry `floors` for those).
 
 ---
 
@@ -398,6 +401,9 @@ physical-only.
 - `GET /cities/{id}/render` — stored city as a PNG straight from Swagger UI
   (`CityPngRenderer`, mirrors `GridVisualizer`'s legend; road classes repainted from
   `RoadSegment`s since the raster doesn't store them). Test: `CityPngRendererTest`.
+- Interactive generation tuner at `/tuner.html` (`CityPreviewService` + `GenerationParams`
+  + `/cities/preview/{defaults,render}`): live in-memory preview of every knob, no
+  persistence. Tests: `GenerationParamsTest`, `CityPreviewServiceTest`.
 
 **What's next (not yet decided as of this revision):** commercial/industrial bridging (mirror
 of the residential slice, job-slot capacity instead of household capacity — Roadmap Step 6

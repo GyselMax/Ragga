@@ -146,7 +146,11 @@ public class TerrainGenerator {
                 double noise = 0.75 * sample(coarse, x, y, FOREST_NOISE_CELL)
                         + 0.25 * sample(detail, x, y, FOREST_DETAIL_CELL);
                 double d = density.at(x, y);
-                double cutoff = 0.58 + 1.2 * (d - config.edgeDensity());
+                // Base cutoff comes from forestDensity (higher = lower cutoff =
+                // more forest); the density term still raises it toward the core
+                // so downtown stays clear. forestDensity 0.42 => base 0.58, the
+                // old fixed value.
+                double cutoff = (1.0 - config.forestDensity()) + 1.2 * (d - config.edgeDensity());
                 if (noise > cutoff) {
                     tiles[x][y] = TileType.FOREST;
                 }

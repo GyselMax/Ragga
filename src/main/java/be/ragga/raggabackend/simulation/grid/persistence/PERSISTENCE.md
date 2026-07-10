@@ -12,10 +12,29 @@ The catalog is DB-seeded on first boot, so just start the app and call the API (
 UI at `/swagger-ui/index.html`):
 
 - `POST /cities/generate` — generate + store a new city, returns a summary (including the
-  seed). Pass `?seed=<n>` to reproduce a specific map.
+  seed). Accepts every `GenerationConfig` knob as a query param (same set as the tuner;
+  omitted ones keep their default), so a tuned city can be persisted exactly as previewed.
+  `?seed=<n>` reproduces a specific map; omit it for a random (returned) seed. An impossible
+  knob combination returns a 400.
+- `GET /cities` — list every stored city (to find an id).
 - `GET /cities/{id}` — read a stored city's summary.
 - `GET /cities/{id}/render` — the stored city as a PNG (same color legend as
-  `GridVisualizer`, see GENERATION.md). `?cellSize=<px per tile>` (1-10, default 4).
+  `GridVisualizer`, see GENERATION.md). `?cellSize=<px per tile>` (1-10, default 4),
+  `?showFloors=true` overlays each building's floor count.
+
+**Interactive tuner** (no persistence — pure in-memory preview):
+
+- Open **`/tuner.html`** in a browser: a slider/number panel for every
+  `GenerationConfig` knob, live-rendering the map as you tweak. The page builds
+  its form from `GET /cities/preview/defaults` (so new knobs appear automatically)
+  and renders via `GET /cities/preview/render` (all knobs as query params;
+  omitted ones keep their default; an impossible combination returns a 400 with
+  the reason). Preview handles maps up to 5000 tiles/side (matching the standalone
+  generator's large-map workflow); saving via `/cities/generate` is limited to 1000/side
+  since it stores one row per tile. Note `maxCityRadius` is in absolute tiles, so on a
+  small map a large radius fills it and leaves no room for satellite cities.
+- **💾 Generate & Save** on the tuner POSTs the current knobs + seed to
+  `/cities/generate`, persisting the previewed city and linking to its render.
 
 The full store→reload path is covered by `CityPersistenceRoundTripTest` (runs on in-memory
 H2, no live DB needed).

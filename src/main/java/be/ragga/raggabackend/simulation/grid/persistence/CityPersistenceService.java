@@ -1,7 +1,6 @@
 package be.ragga.raggabackend.simulation.grid.persistence;
 
 import be.ragga.raggabackend.simulation.City;
-import be.ragga.raggabackend.simulation.grid.CityGridConfig;
 import be.ragga.raggabackend.simulation.grid.CityRepository;
 import be.ragga.raggabackend.simulation.grid.generation.GenerationConfig;
 import be.ragga.raggabackend.simulation.grid.generation.GenerationPipeline;
@@ -19,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.function.Function;
 
 /**
@@ -36,7 +34,6 @@ public class CityPersistenceService {
     private final BuildingTemplateRepository templateRepository;
     private final GenerationResultMapper mapper;
     private final CityRepository cityRepository;
-    private final CityGridConfig gridConfig;
     private final CityPngRenderer pngRenderer;
 
     public CityPersistenceService(GenerationPipeline pipeline,
@@ -44,39 +41,31 @@ public class CityPersistenceService {
                                   BuildingTemplateRepository templateRepository,
                                   GenerationResultMapper mapper,
                                   CityRepository cityRepository,
-                                  CityGridConfig gridConfig,
                                   CityPngRenderer pngRenderer) {
         this.pipeline = pipeline;
         this.templateCatalog = templateCatalog;
         this.templateRepository = templateRepository;
         this.mapper = mapper;
         this.cityRepository = cityRepository;
-        this.gridConfig = gridConfig;
         this.pngRenderer = pngRenderer;
     }
 
     /**
-     * Generates a city and persists it in one transaction.
+     * Generates a city from the given config + seed and persists it in one
+     * transaction. The config is the fully-resolved set of knobs (the tuner
+     * builds it from the sliders); the seed makes it reproducible.
      *
-     * @param seed the seed to generate from, or null for a fresh random one
-     *             (matching the visualizer's reproducibility convention)
      * @return the persisted city
      */
     @Transactional
-    public City generateAndSave(Long seed) {
-        long actualSeed = seed != null ? seed : new Random().nextLong();
-
-        // Only width/height are exposed as properties today, so the remaining
-        // knobs come from GenerationConfig.defaults - the same config the
-        // standalone visualizer renders with.
-        GenerationConfig config = GenerationConfig.defaults(gridConfig.getWidth(), gridConfig.getHeight());
+    public City generateAndSave(GenerationConfig config, long seed) {
         List<TemplateSpec> catalog = templateCatalog.templates();
-        GenerationResult result = pipeline.generate(config, catalog, actualSeed);
+        GenerationResult result = pipeline.generate(config, catalog, seed);
 
         Map<String, BuildingTemplate> templatesByCode = templateRepository.findAll().stream()
                 .collect(java.util.stream.Collectors.toMap(BuildingTemplate::getCode, Function.identity()));
 
-        City city = mapper.toCity(result, actualSeed, config, templatesByCode);
+        City city = mapper.toCity(result, seed, config, templatesByCode);
         return cityRepository.save(city);
     }
 
@@ -90,13 +79,21 @@ public class CityPersistenceService {
         return cityRepository.findById(id).map(CitySummary::of);
     }
 
+    /** Every stored city as a summary - lets a caller discover what's in the DB. */
+    @Transactional(readOnly = true)
+    public List<CitySummary> listSummaries() {
+        return cityRepository.findAll().stream().map(CitySummary::of).toList();
+    }
+
     /**
      * Renders a stored city to a PNG (see {@link CityPngRenderer}). Runs in a
      * transaction because rendering walks every lazy child collection,
      * including the full ~width x height grid raster.
+     *
+     * @param showFloors overlay each building's floor count as a visual aid
      */
     @Transactional(readOnly = true)
-    public Optional<byte[]> renderPng(long id, int cellSize) {
-        return cityRepository.findById(id).map(city -> pngRenderer.render(city, cellSize));
+    public Optional<byte[]> renderPng(long id, int cellSize, boolean showFloors) {
+        return cityRepository.findById(id).map(city -> pngRenderer.render(city, cellSize, showFloors));
     }
 }

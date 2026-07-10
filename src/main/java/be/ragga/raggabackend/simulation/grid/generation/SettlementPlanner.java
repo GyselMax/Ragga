@@ -36,12 +36,16 @@ public class SettlementPlanner {
         for (DensityField.Core core : density.cores()) {
             centers.add(new double[]{core.x(), core.y()});
         }
+        // The first `cityCount` centers are the actual cities (main + satellites);
+        // hamlets get appended after. Kept so the city-to-city pass can single
+        // them out from the hamlets.
+        int cityCount = centers.size();
 
         List<DensityField.Core> hamletCores = scatterHamlets(config, density, terrain, random, centers);
 
         List<int[]> roads = new ArrayList<>();
         if (centers.size() > 1) {
-            connectSettlements(centers, config, roads);
+            connectSettlements(centers, cityCount, config, roads);
         }
         addEdgeExits(centers, config, random, roads);
 
@@ -104,7 +108,8 @@ public class SettlementPlanner {
      * neighbors, then a union-find pass adds the shortest cross-component
      * edges until the whole set is one connected network.
      */
-    private void connectSettlements(List<double[]> centers, GenerationConfig config, List<int[]> roads) {
+    private void connectSettlements(List<double[]> centers, int cityCount,
+                                    GenerationConfig config, List<int[]> roads) {
         int n = centers.size();
         boolean[][] linked = new boolean[n][n];
         int[] parent = new int[n];
@@ -112,10 +117,19 @@ public class SettlementPlanner {
             parent[i] = i;
         }
 
-        // N nearest neighbors per settlement.
+        // N nearest neighbors per settlement (cities and hamlets alike).
         for (int i = 0; i < n; i++) {
             for (int neighbor : nearestNeighbors(centers, i, config.settlementConnectionCount())) {
                 addLink(centers, roads, linked, parent, i, neighbor);
+            }
+        }
+
+        // Extra city-to-city links: each city also reaches its nearest OTHER
+        // cities (hamlets excluded), meshing the cities more than the general
+        // pass would. addLink dedupes, so an already-linked pair costs nothing.
+        for (int i = 0; i < cityCount; i++) {
+            for (int city : nearestCities(centers, i, cityCount, config.cityConnectionCount())) {
+                addLink(centers, roads, linked, parent, i, city);
             }
         }
 
@@ -164,6 +178,18 @@ public class SettlementPlanner {
         }
         others.sort((p, q) -> Double.compare(distance(centers, from, p), distance(centers, from, q)));
         return others.subList(0, Math.min(count, others.size()));
+    }
+
+    /** The `count` nearest cities to `from`, considering only the first `cityCount` centers. */
+    private List<Integer> nearestCities(List<double[]> centers, int from, int cityCount, int count) {
+        List<Integer> cities = new ArrayList<>();
+        for (int i = 0; i < cityCount; i++) {
+            if (i != from) {
+                cities.add(i);
+            }
+        }
+        cities.sort((p, q) -> Double.compare(distance(centers, from, p), distance(centers, from, q)));
+        return cities.subList(0, Math.min(count, cities.size()));
     }
 
     /** Adds edge exits: roads that run from a border point to their nearest settlement. */

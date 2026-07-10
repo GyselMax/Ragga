@@ -33,23 +33,23 @@ class GenerationRegressionTest {
     private static final int SIZE = 400;
 
     // Golden numbers for defaults(400, 400), seed 42.
-    // Last updated: re-derived after the multi-core defaults (maxCityRadius,
-    // cityCount/satellites/hamlets, arterialSpacing 55) and the enlarged
-    // template catalog (highrise/mansions/megamall/megafactory) landed - both
-    // deliberate generation changes that shifted every stat.
-    private static final int GOLDEN_LOTS = 1950;
-    private static final int GOLDEN_RESIDENTIAL = 952;
-    private static final int GOLDEN_COMMERCIAL = 640;
-    private static final int GOLDEN_INDUSTRIAL = 265;
-    private static final int GOLDEN_FARMLAND = 93;
-    private static final int GOLDEN_VACANT = 159;
-    private static final int GOLDEN_PUBLIC_SITES = 98;
-    private static final int GOLDEN_BUILDINGS = 1791;
-    private static final int GOLDEN_ROAD_SEGMENTS = 803;
-    private static final int GOLDEN_ROAD_TILES = 10071;
-    private static final int GOLDEN_PARK_TILES = 50611;
-    private static final int GOLDEN_WATER_TILES = 4591;
-    private static final int GOLDEN_FOREST_TILES = 41015;
+    // Last updated: re-derived after tuning the generation defaults (more
+    // hamlets) - a deliberate change that shifted the lot/zone/farmland/road/
+    // park counts. (The forestDensity and farmlandSizeMultiplier knobs default
+    // to output-neutral values, so they did not move these numbers.)
+    private static final int GOLDEN_LOTS = 1431;
+    private static final int GOLDEN_RESIDENTIAL = 725;
+    private static final int GOLDEN_COMMERCIAL = 431;
+    private static final int GOLDEN_INDUSTRIAL = 208;
+    private static final int GOLDEN_FARMLAND = 67;
+    private static final int GOLDEN_VACANT = 110;
+    private static final int GOLDEN_PUBLIC_SITES = 72;
+    private static final int GOLDEN_BUILDINGS = 1321;
+    private static final int GOLDEN_ROAD_SEGMENTS = 585;
+    private static final int GOLDEN_ROAD_TILES = 6819;
+    private static final int GOLDEN_PARK_TILES = 60267;
+    private static final int GOLDEN_WATER_TILES = 4683;
+    private static final int GOLDEN_FOREST_TILES = 41266;
 
     private static GenerationResult result;
 

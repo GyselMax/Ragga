@@ -116,12 +116,24 @@ package be.ragga.raggabackend.simulation.grid.generation;
  * @param forestsEnabled       Carves noise-shaped woodland where density is low - the map
  *                             corners and the rural rim, never downtown. Roads route
  *                             around it (arterials cut through); no lots form inside.
+ * @param forestDensity        How much woodland the rural land carries, in [0, 1]: higher =
+ *                             more forest (it lowers the noise cutoff for a FOREST tile).
+ *                             Only bites when forestsEnabled is true, and never adds forest
+ *                             downtown - the density falloff still keeps the core clear.
+ *                             0 = almost none, 1 = the countryside is nearly all trees. The
+ *                             default (0.42) reproduces the previous fixed cutoff.
  * @param farmlandDensityThreshold Below this local density the map turns rural: blocks
  *                             stop being split by collector/local roads, lot strips and
  *                             widths triple (huge field parcels), and every lot is zoned
  *                             FARMLAND. With the default falloff this claims the map rim,
  *                             reaching deepest on the side facing away from the core.
  *                             0 = no farmland. Must stay clear of the core: < 1.
+ * @param farmlandSizeMultiplier Scales how big farm parcels get, on top of the rural belt's
+ *                             built-in enlargement (8x strip depth, 3x lot width vs town
+ *                             lots). 1.0 = that default; higher makes the fields deeper and
+ *                             raises the widest-field ceiling, so a big value yields some
+ *                             really large farms (widths still vary, so smaller fields
+ *                             remain too). Self-limited by the rural block size. In (0, 10].
  * @param cityCount            Number of city cores. 1 = a single main city. Above 1 adds
  *                             that many satellite cities, rejection-placed so their urban
  *                             extents never touch each other or the main city (a farm gap
@@ -149,8 +161,19 @@ package be.ragga.raggabackend.simulation.grid.generation;
  * @param minSettlementSpacing Minimum center-to-center distance between hamlets, in tiles,
  *                             so villages don't clump. >= 2x hamletRadius.
  * @param settlementConnectionCount How many nearest neighbors each settlement (city, hamlet)
- *                             links to by road. 1-3; a union pass adds more if needed to
- *                             connect everything into one network.
+ *                             links to by road. 1-6; a union pass ALREADY guarantees the
+ *                             whole network is one connected component, so this only controls
+ *                             how dense the extra countryside links are, not whether things
+ *                             connect. Clamped per settlement to the number of other
+ *                             settlements, so on a map with few of them a high value does
+ *                             nothing.
+ * @param cityConnectionCount  Extra direct road links between the actual cities (main +
+ *                             satellites only, never hamlets), on top of the general
+ *                             settlement graph above. Each city links to its N nearest OTHER
+ *                             cities, so a higher value meshes the cities together with more
+ *                             organic cross-country roads instead of a bare spanning tree.
+ *                             0 = cities connect only through the general graph. Clamped to
+ *                             the number of other cities, so it does nothing with one city.
  * @param edgeExitCount        Number of roads that leave the map at the border toward the
  *                             wider world, each linked to its nearest settlement. Replaces
  *                             the old random rural-highway roll. 0 = none.
@@ -182,7 +205,9 @@ public record GenerationConfig(
         int riverMaxDrift,
         int maxCityRadius,
         boolean forestsEnabled,
+        double forestDensity,
         double farmlandDensityThreshold,
+        double farmlandSizeMultiplier,
         int cityCount,
         double satelliteMinScale,
         double satelliteMaxScale,
@@ -192,6 +217,7 @@ public record GenerationConfig(
         double hamletPeakDensity,
         int minSettlementSpacing,
         int settlementConnectionCount,
+        int cityConnectionCount,
         int edgeExitCount
 ) {
 
@@ -220,6 +246,12 @@ public record GenerationConfig(
         }
         if (farmlandDensityThreshold < 0 || farmlandDensityThreshold >= 1) {
             throw new IllegalArgumentException("farmlandDensityThreshold must be in [0, 1)");
+        }
+        if (forestDensity < 0 || forestDensity > 1) {
+            throw new IllegalArgumentException("forestDensity must be in [0, 1]");
+        }
+        if (farmlandSizeMultiplier <= 0 || farmlandSizeMultiplier > 10) {
+            throw new IllegalArgumentException("farmlandSizeMultiplier must be in (0, 10]");
         }
         if (maxCityRadius != 0 && maxCityRadius < 2 * arterialSpacing) {
             throw new IllegalArgumentException("maxCityRadius must be 0 (uncapped) or at least 2x arterialSpacing");
@@ -262,8 +294,11 @@ public record GenerationConfig(
                 throw new IllegalArgumentException("minSettlementSpacing must be at least 2x hamletRadius");
             }
         }
-        if (settlementConnectionCount < 1 || settlementConnectionCount > 3) {
-            throw new IllegalArgumentException("settlementConnectionCount must be in [1, 3]");
+        if (settlementConnectionCount < 1 || settlementConnectionCount > 6) {
+            throw new IllegalArgumentException("settlementConnectionCount must be in [1, 6]");
+        }
+        if (cityConnectionCount < 0) {
+            throw new IllegalArgumentException("cityConnectionCount may not be negative");
         }
     }
 
@@ -278,15 +313,19 @@ public record GenerationConfig(
                 arterialSpacing, arterialJitter, arterialMaxDrift,
                 minBlockSizeForSplit, maxLocalRoadDepth, blockSplitChance,
                 minBlockArea,
-                stripDepth * 8, minLotWidth * 3, maxLotWidth * 3,
+                // farmlandSizeMultiplier scales the belt's already-enlarged depth
+                // and widest-field ceiling; min width stays so small fields remain.
+                Math.max(1, (int) (stripDepth * 8 * farmlandSizeMultiplier)),
+                minLotWidth * 3,
+                Math.max(minLotWidth * 3, (int) (maxLotWidth * 3 * farmlandSizeMultiplier)),
                 industrialMinLotArea, industrialRatio,
                 publicRatio, coreVacantRatio, edgeVacantRatio, smoothingEnabled,
                 coreRadiusFraction, edgeDensity, coreCenterJitter,
                 riverEnabled, riverWidth, riverMaxDrift,
-                maxCityRadius, forestsEnabled, farmlandDensityThreshold,
+                maxCityRadius, forestsEnabled, forestDensity, farmlandDensityThreshold, farmlandSizeMultiplier,
                 cityCount, satelliteMinScale, satelliteMaxScale, satellitePeakDensity,
                 hamletCount, hamletRadius, hamletPeakDensity,
-                minSettlementSpacing, settlementConnectionCount, edgeExitCount);
+                minSettlementSpacing, settlementConnectionCount, cityConnectionCount, edgeExitCount);
     }
 
     /**
@@ -305,10 +344,10 @@ public record GenerationConfig(
                 publicRatio, coreVacantRatio, edgeVacantRatio, smoothingEnabled,
                 coreRadiusFraction, edgeDensity, coreCenterJitter,
                 riverEnabled, riverWidth, riverMaxDrift,
-                maxCityRadius, forestsEnabled, farmlandDensityThreshold,
+                maxCityRadius, forestsEnabled, forestDensity, farmlandDensityThreshold, farmlandSizeMultiplier,
                 cityCount, satelliteMinScale, satelliteMaxScale, satellitePeakDensity,
                 hamletCount, hamletRadius, hamletPeakDensity,
-                minSettlementSpacing, settlementConnectionCount, edgeExitCount);
+                minSettlementSpacing, settlementConnectionCount, cityConnectionCount, edgeExitCount);
     }
 
     public static GenerationConfig defaults(int width, int height) {
@@ -325,13 +364,15 @@ public record GenerationConfig(
                 0.35, 0.2,      // coreRadiusFraction, edgeDensity
                 0.2,            // coreCenterJitter
                 true, 12, 90,   // riverEnabled, riverWidth, riverMaxDrift
-                1000,              // maxCityRadius (0 = city scales with the map)
+                350,              // maxCityRadius (0 = city scales with the map)
                 true,           // forestsEnabled
+                0.42,           // forestDensity (0.42 reproduces the old fixed forest cutoff)
                 0.25,           // farmlandDensityThreshold
+                1.0,            // farmlandSizeMultiplier (1.0 = the rural belt's default field size)
                 3,              // cityCount (1 = single city, no satellites)
                 0.5, 0.9, 0.85, // satelliteMinScale, satelliteMaxScale, satellitePeakDensity
-                5, 25, 0.6,    // hamletCount, hamletRadius, hamletPeakDensity
-                60, 3, 3        // minSettlementSpacing, settlementConnectionCount, edgeExitCount
+                10, 100, 0.65,    // hamletCount, hamletRadius, hamletPeakDensity
+                200, 3, 2, 3     // minSettlementSpacing, settlementConnectionCount, cityConnectionCount, edgeExitCount
         );
     }
 }
@@ -347,4 +388,44 @@ public record GenerationConfig(
                 0.08,
                 true,
                 0.35, 0.35
+ */
+
+/*
+  "width": 5000,
+  "height": 5000,
+  "arterialSpacing": 50,
+  "arterialJitter": 2,
+  "arterialMaxDrift": 2,
+  "minBlockSizeForSplit": 12,
+  "maxLocalRoadDepth": 4,
+  "blockSplitChance": 0.94,
+  "minBlockArea": 6,
+  "stripDepth": 4,
+  "minLotWidth": 3,
+  "maxLotWidth": 10,
+  "industrialMinLotArea": 18,
+  "industrialRatio": 0.10,
+  "publicRatio": 0.05,
+  "coreVacantRatio": 0.0,
+  "edgeVacantRatio": 0.10,
+  "smoothingEnabled": true,
+  "coreRadiusFraction": 0.35,
+  "edgeDensity": 0.2,
+  "coreCenterJitter": 0.2,
+  "riverEnabled": true,
+  "riverWidth": 12,
+  "riverMaxDrift": 90,
+  "maxCityRadius": 1000,
+  "forestsEnabled": true,
+  "farmlandDensityThreshold": 0.25,
+  "cityCount": 3,
+  "satelliteMinScale": 0.5,
+  "satelliteMaxScale": 0.9,
+  "satellitePeakDensity": 0.85,
+  "hamletCount": 5,
+  "hamletRadius": 25,
+  "hamletPeakDensity": 0.6,
+  "minSettlementSpacing": 60,
+  "settlementConnectionCount": 3,
+  "edgeExitCount": 3
  */
