@@ -26,9 +26,14 @@ import be.ragga.raggabackend.simulation.grid.ZoneType;
  * @param householdCapacity number of households this building holds once occupied;
  *                  meaningful only for RESIDENTIAL templates, 0 for every other zone
  *                  and for public-use templates
+ * @param qualityTier authored blueprint prestige 1..5 (1 = plain bungalow/basic,
+ *                  5 = luxury villa/penthouse), CS2 building-level style. Feeds the
+ *                  STRUCTURAL term of a home's hedonic value, so two homes at the
+ *                  same location diverge by blueprint. Only read for RESIDENTIAL
+ *                  valuation; a neutral value for other zones (inert there)
  */
 public record TemplateSpec(String code, ZoneType zone, boolean publicUse, int width, int depth,
-                           int floors, int householdCapacity) {
+                           int floors, int householdCapacity, int qualityTier) {
 
     public int area() {
         return width * depth;

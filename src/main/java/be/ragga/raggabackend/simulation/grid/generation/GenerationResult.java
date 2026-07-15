@@ -8,6 +8,11 @@ import java.util.List;
 /**
  * Everything the pipeline produced for one city, fully in memory. The
  * visualizer renders this directly; Phase B maps it onto JPA entities.
+ *
+ * {@code densityField} is the multi-core centrality surface every generation
+ * stage was driven by; it is carried through here (not recomputed) so the
+ * post-generation economy pass can read land-value / centrality per location
+ * off the exact same jittered field the city was built from.
  */
 public record GenerationResult(
         GenerationConfig config,
@@ -15,6 +20,7 @@ public record GenerationResult(
         RoadClass[][] roadClasses,
         List<RoadDraft> roads,
         List<LotDraft> lots,
-        List<BuildingDraft> buildings
+        List<BuildingDraft> buildings,
+        DensityField densityField
 ) {
 }

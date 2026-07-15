@@ -1,6 +1,7 @@
 package be.ragga.raggabackend.simulation.grid.generation;
 
 import be.ragga.raggabackend.simulation.grid.TileType;
+import be.ragga.raggabackend.simulation.grid.ZoneType;
 import be.ragga.raggabackend.simulation.grid.lot.Direction;
 import org.springframework.stereotype.Component;
 
@@ -22,14 +23,31 @@ import java.util.Random;
 @Component
 public class BuildingPlacementService {
 
+    // Density-aware residential mix: on a residential lot with more than one
+    // equally-best-fitting template, a lot either takes a low-capacity
+    // (owner-occupiable, capacity-1) house or a high-capacity block. Houses are
+    // the default EVERYWHERE - blocks only appear with probability
+    // clamp(SLOPE*(u-INTERCEPT), 0, MAX) rising with local urbanness u, so they
+    // merely CONCENTRATE toward the dense core rather than being segregated out
+    // of the suburbs. Keeping houses dominant at every density (not just the
+    // rim) is deliberate: the clearing sorts the richest households onto the
+    // highest-quality homes, so those top homes must mostly be ownable houses
+    // for owner-occupancy to span the income range under European (rich-central)
+    // sorting. A single block still holds ~10+ dwellings, so even this minority
+    // of blocks is the bulk of the RENTAL stock (the future company-owned
+    // towers). All three tuned against the EconomyVisualizer tenure report.
+    private static final double BLOCK_PROB_INTERCEPT = 0.78;
+    private static final double BLOCK_PROB_SLOPE = 1.8;
+    private static final double BLOCK_PROB_MAX = 0.4;
+
     public List<BuildingDraft> place(List<LotDraft> lots, List<TemplateSpec> catalog,
-                                     TileType[][] tiles, Random random) {
+                                     TileType[][] tiles, DensityField density, Random random) {
         List<TemplateSpec> publicTemplates = catalog.stream().filter(TemplateSpec::publicUse).toList();
         List<BuildingDraft> buildings = new ArrayList<>();
 
         for (LotDraft lot : lots) {
             if (lot.isPublicSite()) {
-                BuildingDraft building = tryPlace(lot, publicTemplates, tiles, random);
+                BuildingDraft building = tryPlace(lot, publicTemplates, tiles, density, random);
                 if (building != null) {
                     // The whole parcel becomes public ground (building +
                     // surrounding plaza), immutable to player building.
@@ -49,7 +67,7 @@ public class BuildingPlacementService {
             List<TemplateSpec> zoneTemplates = catalog.stream()
                     .filter(t -> !t.publicUse() && t.zone() == lot.getZone())
                     .toList();
-            BuildingDraft building = tryPlace(lot, zoneTemplates, tiles, random);
+            BuildingDraft building = tryPlace(lot, zoneTemplates, tiles, density, random);
             if (building == null) {
                 // Nothing in the library fits this lot - it stays vacant
                 // (zoned, purchasable) rather than failing generation.
@@ -63,7 +81,7 @@ public class BuildingPlacementService {
     }
 
     private BuildingDraft tryPlace(LotDraft lot, List<TemplateSpec> templates, TileType[][] tiles,
-                                   Random random) {
+                                   DensityField density, Random random) {
         // frontageGap = how much of the street the building leaves unfilled;
         // depthGap = how far short of the lot's depth it stops.
         record Candidate(TemplateSpec template, Direction facing, int sizeX, int sizeY,
@@ -111,7 +129,32 @@ public class BuildingPlacementService {
         List<Candidate> best = candidates.stream()
                 .filter(c -> c.frontageGap() == minFrontageGap && c.depthGap() == minDepthGap)
                 .toList();
-        Candidate chosen = best.get(random.nextInt(best.size()));
+        // The fit ranking above is untouched; only the tie-break among the
+        // equally-best fits is density-aware, and only for residential lots
+        // (capacity is meaningless elsewhere). Low-density lots pull the
+        // owner-occupiable capacity-1 houses; the core pulls the blocks/towers.
+        Candidate chosen;
+        if (best.size() == 1 || lot.getZone() != ZoneType.RESIDENTIAL) {
+            chosen = best.get(random.nextInt(best.size()));
+        } else {
+            int cx = lot.getX() + lot.getWidth() / 2;
+            int cy = lot.getY() + lot.getDepth() / 2;
+            double urbanness = Math.clamp(
+                    (density.at(cx, cy) - density.edgeDensity()) / (1.0 - density.edgeDensity()), 0.0, 1.0);
+            double blockProb = Math.clamp(BLOCK_PROB_SLOPE * (urbanness - BLOCK_PROB_INTERCEPT), 0.0, BLOCK_PROB_MAX);
+            // House by default; roll a block only with the density-scaled
+            // probability. Pick the smallest-capacity fit for a house and the
+            // largest for a block; a random draw breaks ties within that
+            // extreme so same-capacity variety survives.
+            boolean wantBlock = random.nextDouble() < blockProb;
+            int targetCapacity = wantBlock
+                    ? best.stream().mapToInt(c -> c.template().householdCapacity()).max().orElseThrow()
+                    : best.stream().mapToInt(c -> c.template().householdCapacity()).min().orElseThrow();
+            List<Candidate> pick = best.stream()
+                    .filter(c -> c.template().householdCapacity() == targetCapacity)
+                    .toList();
+            chosen = pick.get(random.nextInt(pick.size()));
+        }
 
         // Flush against the road-facing edge, random slide along it - but
         // constrained so the footprint overlaps the stretch of the edge that

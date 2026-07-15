@@ -2,9 +2,12 @@ package be.ragga.raggabackend.simulation.grid.persistence.mapping;
 
 import be.ragga.raggabackend.simulation.City;
 import be.ragga.raggabackend.simulation.building.Building;
-import be.ragga.raggabackend.simulation.building.simulated.SimulatedHighRise;
-import be.ragga.raggabackend.simulation.building.simulated.SimulatedLowRise;
-import be.ragga.raggabackend.simulation.building.simulated.SimulatedResidential;
+import be.ragga.raggabackend.simulation.building.AgriculturalBuilding;
+import be.ragga.raggabackend.simulation.building.CommercialBuilding;
+import be.ragga.raggabackend.simulation.building.HighRiseResidential;
+import be.ragga.raggabackend.simulation.building.IndustrialBuilding;
+import be.ragga.raggabackend.simulation.building.LowRiseResidential;
+import be.ragga.raggabackend.simulation.building.ResidentialBuilding;
 import be.ragga.raggabackend.simulation.grid.GridCell;
 import be.ragga.raggabackend.simulation.grid.GridPosition;
 import be.ragga.raggabackend.simulation.grid.ZoneType;
@@ -56,7 +59,7 @@ public class GenerationResultMapper {
         // and gives each PlacedBuilding its lot link for free.
         List<Lot> lots = new ArrayList<>();
         List<PlacedBuilding> placedBuildings = new ArrayList<>();
-        List<Building> simulatedBuildings = new ArrayList<>();
+        List<Building> economicBuildings = new ArrayList<>();
         for (LotDraft draft : result.lots()) {
             Lot lot = new Lot(
                     new GridPosition(draft.getX(), draft.getY()),
@@ -66,14 +69,14 @@ public class GenerationResultMapper {
 
             BuildingDraft buildingDraft = draft.getBuilding();
             if (buildingDraft != null) {
-                PlacedBuilding placedBuilding = mapBuilding(buildingDraft, lot, templatesByCode, simulatedBuildings);
+                PlacedBuilding placedBuilding = mapBuilding(buildingDraft, lot, templatesByCode, economicBuildings);
                 lot.setBuilding(placedBuilding);
                 placedBuildings.add(placedBuilding);
             }
         }
         city.setLots(lots);
         city.setBuildings(placedBuildings);
-        city.setSimulatedBuildings(simulatedBuildings);
+        city.setEconomicBuildings(economicBuildings);
 
         return city;
     }
@@ -104,7 +107,7 @@ public class GenerationResultMapper {
 
     private PlacedBuilding mapBuilding(BuildingDraft draft, Lot lot,
                                        Map<String, BuildingTemplate> templatesByCode,
-                                       List<Building> simulatedBuildings) {
+                                       List<Building> economicBuildings) {
         BuildingTemplate template = templatesByCode.get(draft.template().code());
         if (template == null) {
             throw new IllegalStateException(
@@ -112,15 +115,13 @@ public class GenerationResultMapper {
                             + " - is the catalog seeded?");
         }
 
-        // Only residential placements are bridged to the economic side today;
-        // template().zone() (not the lot's own zone) is the right discriminator,
-        // since a residential-zoned lot flagged as a public site gets a public
-        // template (zone == null) instead. Commercial/industrial/farm/public
-        // placements stay physical-only for now (see design/design-2.0.md).
-        Building building = null;
-        if (draft.template().zone() == ZoneType.RESIDENTIAL) {
-            building = residentialFor(draft);
-            simulatedBuildings.add(building);
+        // Every zoned placement is bridged to an economic Building; template()
+        // .zone() (not the lot's own zone) is the right discriminator, since a
+        // residential-zoned lot flagged as a public site gets a public template
+        // (zone == null). Public-use placements stay physical-only (zone null).
+        Building building = economicFor(draft);
+        if (building != null) {
+            economicBuildings.add(building);
         }
 
         return new PlacedBuilding(
@@ -129,15 +130,37 @@ public class GenerationResultMapper {
                 template, lot, building);
     }
 
+    // Maps a placement to the economic Building for its function, or null for
+    // public-use placements (zone == null), which stay physical-only. Effective
+    // (possibly rotated) footprint and the blueprint's floors/qualityTier are
+    // passed through; the sector-specific worth is computed later by the market
+    // passes (residential: HousingMarketService; the rest: BusinessMarketService).
+    private Building economicFor(BuildingDraft draft) {
+        ZoneType zone = draft.template().zone();
+        if (zone == null) {
+            return null;
+        }
+        int floors = draft.template().floors();
+        int tier = draft.template().qualityTier();
+        return switch (zone) {
+            case RESIDENTIAL -> residentialFor(draft);
+            case COMMERCIAL -> new CommercialBuilding(draft.sizeX(), draft.sizeY(), floors, tier);
+            case INDUSTRIAL -> new IndustrialBuilding(draft.sizeX(), draft.sizeY(), floors, tier);
+            case FARMLAND -> new AgriculturalBuilding(draft.sizeX(), draft.sizeY(), floors, tier);
+            default -> null;
+        };
+    }
+
     // The blueprint's floors decide the concrete subtype: at or above the
-    // high-rise cutoff (see SimulatedResidential.HIGH_RISE_MIN_FLOORS) it's a
+    // high-rise cutoff (see ResidentialBuilding.HIGH_RISE_MIN_FLOORS) it's a
     // tower, below it a low-rise. The effective (possibly rotated) footprint
     // is passed through; floors never rotate.
-    private SimulatedResidential residentialFor(BuildingDraft draft) {
+    private ResidentialBuilding residentialFor(BuildingDraft draft) {
         int floors = draft.template().floors();
         int capacity = draft.template().householdCapacity();
-        return floors >= SimulatedResidential.HIGH_RISE_MIN_FLOORS
-                ? new SimulatedHighRise(draft.sizeX(), draft.sizeY(), floors, capacity)
-                : new SimulatedLowRise(draft.sizeX(), draft.sizeY(), floors, capacity);
+        int qualityTier = draft.template().qualityTier();
+        return floors >= ResidentialBuilding.HIGH_RISE_MIN_FLOORS
+                ? new HighRiseResidential(draft.sizeX(), draft.sizeY(), floors, capacity, qualityTier)
+                : new LowRiseResidential(draft.sizeX(), draft.sizeY(), floors, capacity, qualityTier);
     }
 }

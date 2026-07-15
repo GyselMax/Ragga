@@ -49,8 +49,9 @@ an entity:
 | `tiles[x][y]` (`TileType`) | `GridCell` (one row per tile) | the physical raster of record |
 | `LotDraft` | `Lot` | frontages & zone-lock dropped (generation-time only) |
 | `RoadDraft` | `RoadSegment` | |
-| `BuildingDraft` | `PlacedBuilding` | physical placement; links to its `Lot` + `BuildingTemplate`, and (residential only) to its economic `Building` instance |
-| `BuildingDraft` (residential) | `SimulatedLowRise` / `SimulatedHighRise` | the economic bridge: floors + householdCapacity from the blueprint, bedrooms derived; split by `SimulatedResidential.HIGH_RISE_MIN_FLOORS` |
+| `BuildingDraft` | `PlacedBuilding` | physical placement; links to its `Lot` + `BuildingTemplate`, and to its economic `Building` instance (every zoned placement; public-use stays physical-only) |
+| `BuildingDraft` (residential) | `LowRiseResidential` / `HighRiseResidential` | the economic bridge: floors + householdCapacity from the blueprint, bedrooms derived; split by `ResidentialBuilding.HIGH_RISE_MIN_FLOORS` |
+| `BuildingDraft` (com/ind/farm) | `CommercialBuilding` / `IndustrialBuilding` / `AgriculturalBuilding` | priced in €/m² and company-owned by `BusinessMarketService` |
 | `TemplateSpec` | `BuildingTemplate` | the DB catalog, seeded from `StubTemplateCatalog`; carries footprint + floors + householdCapacity |
 | `GenerationConfig` | JSON column on `City` | provenance — reproduces the exact map with the seed |
 
@@ -62,10 +63,11 @@ an entity:
   matching the domain rule in `TileType`/`ZoneType`.
 - **`PlacedBuilding` stays the physical record; the `Building` hierarchy is the economic one.**
   A placement records *what was stamped where*; the nullable `PlacedBuilding.building` link
-  attaches the economic instance. Today only residential placements are bridged (to
-  `SimulatedLowRise`/`SimulatedHighRise`, split by the blueprint's floors); price/rent/
-  desirability stay null until the land-value/rent-formula phase, and commercial/industrial/
-  farm/public placements stay physical-only.
+  attaches the economic instance. Every zoned placement is now bridged — residential to
+  `LowRiseResidential`/`HighRiseResidential` (priced by `HousingMarketService`), commercial/
+  industrial/farm to `CommercialBuilding`/`IndustrialBuilding`/`AgriculturalBuilding` (priced in
+  €/m² and company-owned by `BusinessMarketService`). Only public-use placements stay physical-only.
+  Ownership is a `Building.owner → Owner` relationship (`Household` or `Company`).
 - **The catalog seeder also backfills.** `ddl-auto=update` adds new columns (floors,
   householdCapacity) with 0 on rows seeded before the column existed; on boot the seeder
   fills stub-known rows still at 0 from `StubTemplateCatalog`, never touching hand-edited

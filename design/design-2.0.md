@@ -46,7 +46,7 @@ This means the simulation has integrity before player input can distort it.
 
 ## Companion Docs
 
-Two package-level docs go deeper than this file on already-built systems — read them instead
+Three package-level docs go deeper than this file on already-built systems — read them instead
 of re-deriving the details:
 
 - [`src/main/java/be/ragga/raggabackend/simulation/grid/generation/GENERATION.md`](../src/main/java/be/ragga/raggabackend/simulation/grid/generation/GENERATION.md) —
@@ -55,6 +55,9 @@ of re-deriving the details:
 - [`src/main/java/be/ragga/raggabackend/simulation/grid/persistence/PERSISTENCE.md`](../src/main/java/be/ragga/raggabackend/simulation/grid/persistence/PERSISTENCE.md) —
   how a generated city is mapped onto JPA entities and stored, the DB-seeded template
   catalog, batching trade-offs of the per-cell grid.
+- [`src/main/java/be/ragga/raggabackend/simulation/economy/ECONOMY.md`](../src/main/java/be/ragga/raggabackend/simulation/economy/ECONOMY.md) —
+  the market-cleared residential valuation + population placement model (bidding-war prices,
+  rent-from-value, ownership/vacancy economics, the `EconomyConfig` knobs, what's deferred).
 
 ---
 
@@ -114,12 +117,14 @@ be.ragga.raggabackend
 │           └── web/       CityGenerationController.java, CitySummary.java
 ```
 
-### Key Abstraction Note
-`PlayerBuilding` and `SimulatedBuilding` both extend `Building` but will eventually need
-a shared interface or abstraction point to support the **building conversion mechanic**
-(see below). This is not urgent but should be kept in mind to avoid painful refactoring later.
-**Update:** `PlayerBuilding` currently isn't even a JPA entity yet (see Known Gaps) — that's
-the more immediate blocker, ahead of the conversion-mechanic abstraction.
+### Key Abstraction Note — RESOLVED (function-first + ownership-as-relationship)
+The old owner-first split (`SimulatedBuilding`/`PlayerBuilding`) has been **removed**. The tree is
+now **function-first** — `Building` → `ResidentialBuilding` (`LowRiseResidential`/`HighRiseResidential`),
+`CommercialBuilding`, `IndustrialBuilding`, `AgriculturalBuilding` — and ownership is a mutable
+**relationship**: `Building.owner` points at an `Owner` (abstract `@Entity`, JOINED) that `Household`
+and `Company` extend (a player owner slots in the same way). The NPC→player conversion mechanic is now
+a plain `setOwner(...)`, no class swap or link migration. See
+[commercial-industrial-agrarian-plan.md](commercial-industrial-agrarian-plan.md).
 
 Separately: the generation pipeline's `PlacedBuilding` (physical placement: template, footprint,
 facing, lot) is a **deliberately separate** entity from the `Building` hierarchy (economic:
@@ -230,11 +235,19 @@ economic values is Roadmap Step 3's remaining work (see Current Status).
   employed inhabitants = more spending = more demand for commercial zones.
 
 ### Rent
-- Rent is calculated per building using the formula (inspired by Cities: Skylines II):
-  `Rent = (LandValue + (ZoneType × BuildingLevel)) × LotSize × SpaceMultiplier`
-- `LandValue` on a `GridCell` is a future field, initially defaulting to a configurable base.
+- **Implemented for residential (see [ECONOMY.md](../src/main/java/be/ragga/raggabackend/simulation/economy/ECONOMY.md)).**
+  Residential rent is now **derived from a market-cleared sale value**, not a static formula:
+  a bidding-war clears each dwelling's price (willingness-to-pay capped by income + credit,
+  second-price/runner-up rule), and `rent = grossYield(value) × value / 12` with yield inverse
+  to value. This **supersedes** the earlier design-1.0 sketch
+  `Rent = (LandValue + (ZoneType × BuildingLevel)) × LotSize × SpaceMultiplier` — the
+  floor-area × cleared-value form is directly calibratable against real figures and reproduces
+  price spikes under scarcity, which the sketch could not. Land value is derived from
+  `DensityField` centrality, not stored per `GridCell`.
 - A household only triggers a "can't afford rent" condition when its income is genuinely
-  insufficient — temporary savings dips do not immediately cause eviction.
+  insufficient — temporary savings dips do not immediately cause eviction. (The live
+  eviction/turn loop is future work; at generation, a household is never *placed* into a home
+  costing it more than 40% of income.)
 
 ### Fair Wage and Seniority
 - Base market rate is `Occupation.averageSalary` with `standardDeviation`
@@ -326,7 +339,10 @@ browser**:
 - **Update:** the API + browser tooling now exist
   ([CityGenerationController](../src/main/java/be/ragga/raggabackend/simulation/grid/persistence/web/CityGenerationController.java)).
   `POST /cities/generate` + `GET /cities/{id}` (persist/read), `GET /cities/{id}/render`
-  (stored city → PNG, `CityPngRenderer`), and the **interactive tuner at `/tuner.html`**:
+  (stored city → PNG, `CityPngRenderer`), `GET /cities/{id}/heatmap?mode=value|tenure`
+  (stored city → economy heatmap PNG, `EconomyHeatmapRenderer` — the API twin of the
+  standalone `EconomyVisualizer`: homes coloured by cleared value or by tenure), and the
+  **interactive tuner at `/tuner.html`**:
   a live slider panel over every `GenerationConfig` knob, backed by
   `GET /cities/preview/render` (in-memory, non-persisting) and `GET /cities/preview/defaults`.
   This delivers the "change a value, see the city immediately — no IDE, no recompile" goal
@@ -342,13 +358,13 @@ browser**:
 | 1 | Finish Household/Inhabitant wiring — JPA mappings, `HouseholdRole` on `Inhabitant`, add grid coordinates to `Building` and `Household` | ✅ Done¹ |
 | 2 | Grid generation + Zoning system | ✅ Done |
 | 3 | Building placement on the grid (Simulated buildings get coordinates) | 🟡 In progress³ |
-| 4 | Household generation + placement in residential zones | Not started |
+| 4 | Household generation + placement in residential zones | 🟡 In progress⁴ |
 | 5 | Inhabitant generation inside households (including `age` field and death probability table) | Not started |
 | 6 | NPC job matching (proximity + education + salary weighted; overqualified fill-down allowed) | Not started |
 | 7 | Simulate N turns without players — validate city stability | Not started |
 | 8 | Income processing (salary → tax → debt → rent → shops → savings) | Not started |
 | 9 | Shop/spending system (which inhabitants spend where; demand drives commercial health) | Not started |
-| 10 | `Company` class — owns buildings, tracks financial stats, drives layoffs and hiring | Not started |
+| 10 | `Company` class — owns buildings, tracks financial stats, drives layoffs and hiring. **Also the intended owner of multi-dwelling residential blocks/towers** (apartments/highrises), which the economy calibration keeps as rental stock outside individual owner-occupancy | Not started |
 | 11 | Life events loop — layoffs, voluntary job changes (with counter-offer), aging, death, homelessness, personal bankruptcy | Not started |
 | 12 | Player entry (hire workers, buy buildings, take loans) | Not started |
 
@@ -367,9 +383,21 @@ subtype splits at `SimulatedResidential.HIGH_RISE_MIN_FLOORS` (7). Each instance
 `householdCapacity` (authored, scaled to floors) and a derived `bedroomsPerHousehold`
 (clamped floor-area formula: `sizeX×sizeY×floors / capacity / 4 tiles-per-bedroom`, 1–8) —
 the data Roadmap Step 4 will consume to generate and place households. Floors also give
-future 3D/browser renders their box heights. `price`/`rent`/`desirability` remain null (no
-land-value/rent-formula system yet) and commercial/industrial/farm placements stay
-physical-only.
+future 3D/browser renders their box heights. Blueprints now also carry `qualityTier` (1–5,
+villa vs bungalow) feeding the structural term of valuation. `price`/`rent`/`desirability` are
+**now populated** for residential by the Step 4 market pass (footnote ⁴); commercial/industrial/
+farm placements stay physical-only.
+
+⁴ **Residential valuation + population placement (this revision).** A new `simulation.economy`
+package makes residential property a market: a bidding-war clears every dwelling's `price`,
+`rent` is derived from that cleared value, and `desirability` holds the hedonic quality Q.
+Households are generated with a realistic income distribution (lognormal + Pareto tail) and
+placed into homes they can afford, reproducing European rich-in-the-centre sorting; buildings
+get owners (owner-occupiers or multi-home landlords), with vacancy-tax / owner-P&L economics
+defined as pure formulas. Runs inside `generateAndSave`. Full model, config knobs and deferred
+items in [ECONOMY.md](../src/main/java/be/ragga/raggabackend/simulation/economy/ECONOMY.md).
+Still open under Step 4: `Inhabitant` generation *inside* the households (Step 5), and the live
+turn-loop dynamics (Steps 7–11).
 
 ---
 
@@ -404,17 +432,59 @@ physical-only.
 - Interactive generation tuner at `/tuner.html` (`CityPreviewService` + `GenerationParams`
   + `/cities/preview/{defaults,render}`): live in-memory preview of every knob, no
   persistence. Tests: `GenerationParamsTest`, `CityPreviewServiceTest`.
+- **Residential economy (Roadmap Step 4, this revision):** the `simulation.economy` package —
+  `EconomyConfig`, `HousingEconomics` (pure valuation/finance math), `PopulationService`
+  (income distribution) and `HousingMarketService` (bidding-war clearing, tenure, ownership).
+  Every residential `Building` gets a market-cleared `price`/`rent`/`desirability`; households
+  are generated and placed into affordable homes with owner/landlord assignment. Runs inside
+  `generateAndSave`. Blueprints gained a `qualityTier` (villa vs bungalow) and the household
+  package gained accessors, repositories, and `tenure`/`residence`/`owner` links.
+  Tests: `HousingEconomicsTest`, `HousingMarketServiceTest`, `PopulationServiceTest`, extended
+  `CityPersistenceRoundTripTest` (households + owners + economics round-trip). See
+  [ECONOMY.md](../src/main/java/be/ragga/raggabackend/simulation/economy/ECONOMY.md).
+- **Economy calibration + generation supply (latest revision).** The market pass was retuned
+  from a ~100%-renter / core price-to-income ~15× city to **~40–60% owner-occupancy, realized
+  price-to-income ~6–8, overburden ~10%** (measured across seeds with `EconomyVisualizer`).
+  Because only single-dwelling (`capacity == 1`) homes can be owner-occupied (condo ownership
+  deferred), the fix was **supply + affordability together**, not dials alone: the residential
+  template catalog gained a capacity-1 house at every block footprint, and
+  `BuildingPlacementService` now chooses house-vs-block **density-aware** (houses the default
+  everywhere, blocks concentrating in the dense core) so capacity-1 homes are a *majority of
+  dwellings*. Economy dials moved: lower price level (`baseUnitValue`/`qualitySpan`/
+  `medianReferenceValue`), `incomeElasticity` 0.7→0.45, `ltv` 0.80→0.90, higher savings curve,
+  lower yield anchor. Apartments/highrises stay rental stock, **earmarked as future
+  company-owned assets** (Step 10). No engine logic changed in the economy package; the golden
+  generation test was unaffected (it locks counts, not template choice). Doc fix: the dead
+  `EconomyConfig.industryPenalty` javadoc now says RESERVED.
 
-**What's next (not yet decided as of this revision):** commercial/industrial bridging (mirror
-of the residential slice, job-slot capacity instead of household capacity — Roadmap Step 6
-territory), Roadmap Step 4 (actually generate/place `Household` entities into the new
-`householdCapacity` slots), or closing out the remaining Known Gaps below. Check with the user
-before assuming which.
+**Commercial / industrial / agrarian real estate + companies (this revision).** The building hierarchy
+was reshaped **function-first** and ownership made a relationship (`Building.owner → Owner`; `Household`
+and the new `Company` extend `Owner`). All three non-residential zones are now bridged to real `Building`
+types (`CommercialBuilding`/`IndustrialBuilding`/`AgriculturalBuilding`) and priced by a new
+`BusinessMarketService` in **€/m²** (value = €/m²(Q) × area; commerce is centrality-led, industry
+road/logistics-led, farmland area-dominant + water). Companies (€100–500k starting capital) bid for and
+own/operate the stock, mirroring the residential owner-occupier/landlord split (buy-and-operate, tenant,
+landlord, or vacant). New config `BusinessEconomyConfig` (tuner-exposed via `BusinessParams` +
+`/cities/business/defaults`); the value **heatmap now renders €/m² across every sector**. New packages/classes:
+`simulation.owner.Owner`, `simulation.company.{Company,CompanySector,CompanyRepository}`,
+`economy.{BusinessEconomyConfig,BusinessEconomics,BusinessMarketService}`. Tests:
+`BusinessMarketServiceTest`, `BusinessParamsTest`, extended `CityPersistenceRoundTripTest`. **Deferred**
+(turn loop): revenue/inventory/profit-driven value, job slots, company financial stats. See
+[commercial-industrial-agrarian-plan.md](commercial-industrial-agrarian-plan.md).
+
+**What's next (not yet decided as of this revision):** `Inhabitant` generation *inside* the
+placed households (Roadmap Step 5 — ages, education, the death-probability table), NPC job matching tying
+`Occupation` slots to the new commercial/industrial buildings (Step 6), or the simulation turn loop that
+ticks the economy the market passes seeded (vacancy accrual, landlord buy/sell, rent re-clearing, company
+revenue/hiring — Steps 7–11). Check with the user before assuming which.
 
 **Known scaling cost, not yet addressed:** `City.simulatedBuildings` sits on the `Building`
 JOINED-inheritance hierarchy (6 mapped levels). Loading it issues a query LEFT JOINing every
 `Simulated*` subtype table regardless of which are actually populated — confirmed in the
-round-trip test's SQL log. Worth watching as more subtypes gain real rows.
+round-trip test's SQL log. The Step 4 `Household.residence` (`@ManyToOne Building`) and
+`Building.owner` (`@ManyToOne Household`) links traverse the same hierarchy, so loading
+households eagerly fans out across all subtype tables too. Both are `@ManyToOne` (lazy by
+default at the collection level), but worth watching as more subtypes gain real rows.
 
 **How to verify the current state works:** `./mvnw test` runs the full suite including the
 two regression/round-trip tests above; `./mvnw compile` catches JPA mapping errors early via
@@ -426,22 +496,33 @@ two regression/round-trip tests above; `./mvnw compile` catches JPA mapping erro
 
 Found during a Step 1 audit; not yet fixed. Listed here so they aren't lost across sessions.
 
-- **No accessors in `household`, and only partial coverage in `building`.** `Household`,
-  `Inhabitant`, `Occupation` still have private fields and zero getters/setters. `Building` and
-  the full `Simulated*` residential branch (`SimulatedBuilding`/`SimulatedResidential`/
-  `SimulatedLowRise`/`SimulatedHighRise`) gained accessors + constructors as part of the Step 3
-  residential slice; `SimulatedCommercial`/`SimulatedIndustrial`/`Player*` remain untouched.
-- **`Household` still has no grid coordinates.** `Building` doesn't need its own position field
-  after all — it's reachable via its `PlacedBuilding` link, which already has `origin`. Every
-  positioned entity (`GridCell`, `Lot`, `RoadSegment`, `PlacedBuilding`) reuses the
-  `@Embeddable GridPosition` — the same pattern would apply to `Household` once it's tackled.
+- **Partial accessor coverage in `building`.** `Household`, `Inhabitant`, `Occupation` now have
+  full getters/setters (added with the Step 4 economy slice), and `Building` + the `Simulated*`
+  residential branch have accessors + constructors. `SimulatedCommercial`/`SimulatedIndustrial`/
+  `Player*` remain untouched.
+- **`Household` has no grid coordinates — now by design.** With the Step 4 slice, a household
+  reaches its position through `residence` → `Building` → its `PlacedBuilding.origin`, so it
+  needs no coordinates of its own. `Building` is likewise reachable via its `PlacedBuilding`
+  link. Every positioned entity (`GridCell`, `Lot`, `RoadSegment`, `PlacedBuilding`) reuses the
+  `@Embeddable GridPosition`; a household would only need its own if it ever exists un-housed
+  (the future homelessness mechanic).
 - **`PlayerBuilding` is not a JPA entity.** `Building` declares
   `@Inheritance(strategy = InheritanceType.JOINED)` and `SimulatedBuilding` correctly carries
   `@Entity`, but `PlayerBuilding` has no `@Entity` annotation. Its leaf subtypes
   (`PlayerResidential`, `PlayerCommercial`, `PlayerIndustrial`) are currently unpersistable.
   Will bite at Step 12 (building takeover) if left as-is.
-- **No repositories for `Household`, `Inhabitant`, or `Occupation`** — `BuildingRepository` was
-  added alongside the Step 3 residential slice; the household package still has none.
+- ~~**No repositories for `Household`, `Inhabitant`, or `Occupation`**~~ — **resolved** with the
+  Step 4 slice: `HouseholdRepository`, `InhabitantRepository`, `OccupationRepository` now exist
+  alongside `BuildingRepository`.
+- **Mortgage debt is used to decide a purchase but not stored as a liability.** The Step 4
+  affordability cap (`HousingEconomics.affordCap`) explicitly lets a household borrow to buy —
+  `savings + serviceable-mortgage`, bounded by LTV (max 80% borrowed / 20% down from savings)
+  and DSTI (payment ≤ 35% of income) — so owners *do* take on mortgage debt in the decision.
+  But the resulting outstanding loan is **not** written back: `Household.sharedDebt` /
+  `Inhabitant.personalDebt` are left null after purchase. Recording the balance and **servicing
+  it each turn** (the Economy section's per-turn "service personal debt" step) is turn-loop work,
+  deferred to Roadmap Steps 8–11. Also note the caps are *prudent* limits — reckless
+  over-borrowing into distress is deliberately not modelled (the anti-spiral guardrail relies on it).
 - **`building/modifier` (`PublicBuilding`, `BusStop`, `MetroStop`, `TrainStop`) isn't wired
   into the `Building` hierarchy at all** — no fields, no JPA, doesn't extend `Building`.
   Not urgent (not on the current roadmap step), but will need attention once public-building
@@ -450,6 +531,11 @@ Found during a Step 1 audit; not yet fixed. Listed here so they aren't lost acro
 ---
 
 ## Open Questions / Future Decisions
+- ~~**Building class hierarchy: owner-first vs function-first vs ownership-as-relationship.**~~ **RESOLVED
+  (function-first + ownership-as-relationship).** The `Simulated*`/`Player*` split is gone; `Building` now
+  has functional subtypes and ownership is a mutable `Building.owner → Owner` relationship (`Household` and
+  `Company` extend the abstract `Owner` entity). Takeover is `setOwner(...)`. See the Key Abstraction Note
+  above and [commercial-industrial-agrarian-plan.md](commercial-industrial-agrarian-plan.md).
 - Exact tax model (flat, bracketed, municipal?)
 - Loan system mechanics for players (interest rate, repayment terms, default consequences)
 - How building inventory/stock works for shops (needed before step 9 is meaningful)

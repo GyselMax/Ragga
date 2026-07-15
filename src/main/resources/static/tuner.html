@@ -34,6 +34,18 @@
             border-radius: 4px; padding: 3px 6px; font: inherit; text-align: right;
         }
         .row input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); }
+        /* Collapsible top-level sections: one for the generation knobs, one for
+           the economy knobs. Styled so the <summary> reads as a section header. */
+        details.section { border: 1px solid var(--line); border-radius: 6px; margin: 0 0 12px; background: var(--panel2); }
+        details.section > summary {
+            cursor: pointer; list-style: none; padding: 9px 12px; font-size: 13px; font-weight: 600;
+            color: var(--text); display: flex; align-items: center; gap: 8px; user-select: none;
+        }
+        details.section > summary::-webkit-details-marker { display: none; }
+        details.section > summary::before { content: '▸'; color: var(--accent); font-size: 11px; }
+        details.section[open] > summary::before { content: '▾'; }
+        details.section > summary .count { color: var(--muted); font-weight: 400; font-size: 11px; margin-left: auto; }
+        details.section > .body { padding: 4px 10px 10px; }
         .controls { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
         .controls input { width: 110px; background: var(--panel2); border: 1px solid var(--line); color: var(--text); border-radius: 4px; padding: 4px 6px; font: inherit; }
         button {
@@ -79,7 +91,35 @@
         map a big radius fills it and crowds out satellites; enlarge the map or lower the radius.
     </p>
 
-    <div id="form"></div>
+    <!-- The generation knobs drive the live map preview; the economy knobs are
+         applied only on Generate & Save (the preview render does not run the
+         market pass). Both are collapsible so the panel stays manageable. -->
+    <details class="section" id="genSection" open>
+        <summary>Generation <span class="count" id="genCount"></span></summary>
+        <div class="body" id="genForm"></div>
+    </details>
+    <details class="section" id="econSection">
+        <summary>Economy (residential) <span class="count" id="econCount"></span></summary>
+        <div class="body">
+            <p class="sub" style="margin:2px 0 10px">
+                Applied on <strong>Generate &amp; Save</strong> only — the live map preview doesn't
+                run the market pass. After saving, use the <em>value</em> / <em>tenure</em> heatmap
+                links to see the effect.
+            </p>
+            <div id="econForm"></div>
+        </div>
+    </details>
+    <details class="section" id="bizSection">
+        <summary>Economy (business) <span class="count" id="bizCount"></span></summary>
+        <div class="body">
+            <p class="sub" style="margin:2px 0 10px">
+                Shops, factories and farms — priced in <strong>€/m²</strong> and bought by companies.
+                Applied on <strong>Generate &amp; Save</strong>; view with the <em>value</em> heatmap
+                (which now renders €/m² across every sector).
+            </p>
+            <div id="bizForm"></div>
+        </div>
+    </details>
 </div>
 
 <div id="stage">
@@ -90,7 +130,8 @@
 </div>
 
 <script>
-    // Human-readable grouping of the knobs. Any key not listed lands in "Other".
+    // Human-readable grouping of the generation knobs. Any key not listed lands
+    // in "Other".
     const GROUPS = {
         "Map size": ["width", "height"],
         "Roads": ["arterialSpacing", "arterialJitter", "arterialMaxDrift", "edgeExitCount"],
@@ -102,6 +143,27 @@
         "Hamlets & links": ["hamletCount", "hamletRadius", "hamletPeakDensity", "minSettlementSpacing", "settlementConnectionCount", "cityConnectionCount"]
     };
 
+    // Human-readable grouping of the business knobs (BusinessEconomyConfig components).
+    const BIZ_GROUPS = {
+        "Company capital": ["minCompanyCapital", "maxCompanyCapital", "downPaymentFraction", "capitalElasticity"],
+        "Commercial €/m²": ["comBasePricePerM2", "comSpanPricePerM2"],
+        "Industrial €/m²": ["indBasePricePerM2", "indSpanPricePerM2"],
+        "Farm €/m²": ["farmBasePricePerM2", "farmSpanPricePerM2"],
+        "Shared": ["squareMetersPerTile", "amenityScanRadius", "priceFloorFraction", "businessYield"]
+    };
+
+    // Human-readable grouping of the economy knobs (EconomyConfig components).
+    const ECON_GROUPS = {
+        "Quality & hedonics": ["squareMetersPerTile", "locationWeight", "structureWeight", "referenceDwellingArea", "parkBonus", "waterBonus", "industryPenalty", "heavyRoadPenalty", "amenityScanRadius", "centralAmenityStrength"],
+        "Price level": ["baseUnitValue", "qualitySpan", "priceFloorFraction", "incomeElasticity", "medianReferenceValue"],
+        "Credit & mortgage": ["ltv", "dstiCap", "mortgageAnnualRate", "mortgageTermMonths"],
+        "Rental yield": ["yieldAtMedianValue", "yieldLogSlope", "yieldMin", "yieldMax"],
+        "Income distribution": ["medianHouseholdIncome", "incomeSigma", "paretoAlpha", "paretoCutoffPercentile"],
+        "Savings": ["savingsYearsAtMedian", "savingsIncomeSlope", "maxSavingsYears"],
+        "Affordability": ["rentBurdenCap", "overburdenCap"],
+        "Landlord costs & vacancy": ["propertyTaxRate", "maintenanceRate", "managementFeeRate", "vacancyTaxTier1", "vacancyTaxTier2", "vacancyTaxTier3", "vacancyGracePeriods", "targetVacancyRate"]
+    };
+
     // The API lives on the Spring app (:8080). When this page is served from
     // there too, use same-origin (''). When it's opened from a different local
     // origin - IntelliJ's built-in server on :63342, or a file:// path - point
@@ -111,59 +173,78 @@
     const API_BASE = (location.protocol !== 'file:' && location.port === APP_PORT)
         ? '' : 'http://localhost:' + APP_PORT;
 
-    let defaults = {};
-    const inputs = {}; // key -> input element
+    let genDefaults = {};   // generation knobs (drive the live preview)
+    let econDefaults = {};  // residential economy knobs (applied on save only)
+    let bizDefaults = {};   // business economy knobs (applied on save only)
+    const inputs = {};      // key -> input element (all sections; buildQuery sends all)
 
     function humanize(key) {
         return key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
     }
 
-    function buildForm() {
-        const form = document.getElementById('form');
-        form.innerHTML = '';
+    function makeRow(key, val, onChange) {
+        const row = document.createElement('div');
+        row.className = 'row';
+        const label = document.createElement('label');
+        label.textContent = humanize(key);
+        label.title = key;
+        const input = document.createElement('input');
+        if (typeof val === 'boolean') {
+            input.type = 'checkbox';
+            input.checked = val;
+        } else {
+            input.type = 'number';
+            // 'any' lets fine-grained economy dials (0.021, 0.046) be typed
+            // without the stepper snapping them; integers still step by 1.
+            input.step = Number.isInteger(val) ? '1' : 'any';
+            input.value = val;
+        }
+        input.addEventListener('change', onChange);
+        input.addEventListener('input', onChange);
+        inputs[key] = input;
+        row.appendChild(label);
+        row.appendChild(input);
+        return row;
+    }
+
+    // Builds grouped fieldsets for `defs` into `container`, registering each
+    // input in the shared `inputs` map. Returns the number of knobs placed.
+    function buildSection(container, defs, groups, onChange) {
+        container.innerHTML = '';
         const placed = new Set();
-
-        const makeRow = (key) => {
-            const val = defaults[key];
-            const row = document.createElement('div');
-            row.className = 'row';
-            const label = document.createElement('label');
-            label.textContent = humanize(key);
-            label.title = key;
-            const input = document.createElement('input');
-            if (typeof val === 'boolean') {
-                input.type = 'checkbox';
-                input.checked = val;
-            } else {
-                input.type = 'number';
-                input.step = Number.isInteger(val) ? '1' : '0.01';
-                input.value = val;
-            }
-            input.addEventListener('change', () => scheduleRender());
-            input.addEventListener('input', () => scheduleRender());
-            inputs[key] = input;
-            row.appendChild(label);
-            row.appendChild(input);
-            return row;
-        };
-
-        for (const [group, keys] of Object.entries(GROUPS)) {
+        let count = 0;
+        for (const [group, keys] of Object.entries(groups)) {
             const fs = document.createElement('fieldset');
             const lg = document.createElement('legend');
             lg.textContent = group;
             fs.appendChild(lg);
+            let any = false;
             for (const key of keys) {
-                if (key in defaults) { fs.appendChild(makeRow(key)); placed.add(key); }
+                if (key in defs) { fs.appendChild(makeRow(key, defs[key], onChange)); placed.add(key); any = true; count++; }
             }
-            form.appendChild(fs);
+            if (any) container.appendChild(fs);
         }
-        const leftovers = Object.keys(defaults).filter(k => !placed.has(k));
+        const leftovers = Object.keys(defs).filter(k => !placed.has(k));
         if (leftovers.length) {
             const fs = document.createElement('fieldset');
             const lg = document.createElement('legend'); lg.textContent = 'Other'; fs.appendChild(lg);
-            leftovers.forEach(k => fs.appendChild(makeRow(k)));
-            form.appendChild(fs);
+            leftovers.forEach(k => { fs.appendChild(makeRow(k, defs[k], onChange)); count++; });
+            container.appendChild(fs);
         }
+        return count;
+    }
+
+    function buildForms() {
+        // Clear the shared map so a Reset doesn't leave stale references.
+        for (const k of Object.keys(inputs)) delete inputs[k];
+        const genN = buildSection(document.getElementById('genForm'), genDefaults, GROUPS, scheduleRender);
+        // Economy/business edits never trigger a live render (preview ignores
+        // them), so they don't schedule one - they take effect on the next Save.
+        const econN = buildSection(document.getElementById('econForm'), econDefaults, ECON_GROUPS, () => {});
+        const bizN = buildSection(document.getElementById('bizForm'), bizDefaults, BIZ_GROUPS, () => {});
+        document.getElementById('genCount').textContent = genN + ' knobs';
+        document.getElementById('econCount').textContent = econN + ' knobs';
+        document.getElementById('bizCount').textContent = bizN + ' knobs';
     }
 
     function buildQuery() {
@@ -214,7 +295,7 @@
     }
 
     async function generateAndSave() {
-        const query = buildQuery(); // same knobs + seed the preview uses
+        const query = buildQuery(); // generation + economy knobs + seed
         const result = document.getElementById('saveResult');
         const btn = document.getElementById('save');
         result.style.color = 'var(--muted)';
@@ -228,11 +309,16 @@
                 result.textContent = body;
             } else {
                 const city = JSON.parse(body);
-                const view = API_BASE + '/cities/' + city.id + '/render?showFloors=true&cellSize=8';
+                const base = API_BASE + '/cities/' + city.id;
+                const view = base + '/render?showFloors=true&cellSize=8';
+                const heatVal = base + '/heatmap?mode=value&cellSize=8';
+                const heatTen = base + '/heatmap?mode=tenure&cellSize=8';
                 result.style.color = '#4caf76';
                 result.innerHTML = '✓ saved city #' + city.id + ' (seed ' + city.seed + ', '
-                    + city.buildingCount + ' buildings) — '
-                    + '<a href="' + view + '" target="_blank">view saved PNG</a>';
+                    + city.buildingCount + ' buildings)<br>'
+                    + '<a href="' + view + '" target="_blank">map</a> · '
+                    + '<a href="' + heatVal + '" target="_blank">value heatmap</a> · '
+                    + '<a href="' + heatTen + '" target="_blank">tenure heatmap</a>';
             }
         } catch (e) {
             result.style.color = 'var(--error)';
@@ -244,7 +330,7 @@
 
     document.getElementById('render').addEventListener('click', render);
     document.getElementById('save').addEventListener('click', generateAndSave);
-    document.getElementById('reset').addEventListener('click', () => { buildForm(); render(); });
+    document.getElementById('reset').addEventListener('click', () => { buildForms(); render(); });
     document.getElementById('randomSeed').addEventListener('click', () => {
         document.getElementById('seed').value = Math.floor(Math.random() * 1e9);
         render();
@@ -253,9 +339,14 @@
     document.getElementById('cellSize').addEventListener('change', scheduleRender);
     document.getElementById('showFloors').addEventListener('change', scheduleRender);
 
-    fetch(API_BASE + '/cities/preview/defaults')
-        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-        .then(d => { defaults = d; buildForm(); render(); })
+    // Load both knob sets, then build the panel. Economy defaults are optional -
+    // if that endpoint is missing (older build), the generation tuner still works.
+    Promise.all([
+        fetch(API_BASE + '/cities/preview/defaults').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }),
+        fetch(API_BASE + '/cities/economy/defaults').then(r => r.ok ? r.json() : {}).catch(() => ({})),
+        fetch(API_BASE + '/cities/business/defaults').then(r => r.ok ? r.json() : {}).catch(() => ({}))
+    ])
+        .then(([gen, econ, biz]) => { genDefaults = gen; econDefaults = econ; bizDefaults = biz; buildForms(); render(); })
         .catch(e => {
             const err = document.getElementById('err');
             err.hidden = false;

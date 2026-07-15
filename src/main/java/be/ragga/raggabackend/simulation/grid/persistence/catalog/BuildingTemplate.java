@@ -41,11 +41,15 @@ public class BuildingTemplate {
     // RESIDENTIAL templates, 0 for every other zone and for public-use templates.
     private int householdCapacity;
 
+    // Blueprint prestige 1..5 (villa > bungalow) - feeds the structural term of
+    // residential valuation. See TemplateSpec.qualityTier.
+    private int qualityTier;
+
     protected BuildingTemplate() {
     }
 
     public BuildingTemplate(String code, ZoneType zone, boolean publicUse, int width, int depth,
-                            int floors, int householdCapacity) {
+                            int floors, int householdCapacity, int qualityTier) {
         this.code = code;
         this.zone = zone;
         this.publicUse = publicUse;
@@ -53,15 +57,16 @@ public class BuildingTemplate {
         this.depth = depth;
         this.floors = floors;
         this.householdCapacity = householdCapacity;
+        this.qualityTier = qualityTier;
     }
 
     public static BuildingTemplate from(TemplateSpec spec) {
         return new BuildingTemplate(spec.code(), spec.zone(), spec.publicUse(), spec.width(), spec.depth(),
-                spec.floors(), spec.householdCapacity());
+                spec.floors(), spec.householdCapacity(), spec.qualityTier());
     }
 
     public TemplateSpec toSpec() {
-        return new TemplateSpec(code, zone, publicUse, width, depth, floors, householdCapacity);
+        return new TemplateSpec(code, zone, publicUse, width, depth, floors, householdCapacity, qualityTier);
     }
 
     public long getId() {
@@ -96,7 +101,11 @@ public class BuildingTemplate {
         return householdCapacity;
     }
 
-    // The two setters below are package-private on purpose: only the seeder's
+    public int getQualityTier() {
+        return qualityTier;
+    }
+
+    // The setters below are package-private on purpose: only the seeder's
     // backfill (same package) may mutate a catalog row; everything else treats
     // templates as immutable.
     void setHouseholdCapacity(int householdCapacity) {
@@ -105,5 +114,9 @@ public class BuildingTemplate {
 
     void setFloors(int floors) {
         this.floors = floors;
+    }
+
+    void setQualityTier(int qualityTier) {
+        this.qualityTier = qualityTier;
     }
 }

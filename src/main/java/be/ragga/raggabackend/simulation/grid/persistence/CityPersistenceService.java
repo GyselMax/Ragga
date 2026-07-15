@@ -1,6 +1,10 @@
 package be.ragga.raggabackend.simulation.grid.persistence;
 
 import be.ragga.raggabackend.simulation.City;
+import be.ragga.raggabackend.simulation.economy.BusinessEconomyConfig;
+import be.ragga.raggabackend.simulation.economy.BusinessMarketService;
+import be.ragga.raggabackend.simulation.economy.EconomyConfig;
+import be.ragga.raggabackend.simulation.economy.PopulationService;
 import be.ragga.raggabackend.simulation.grid.CityRepository;
 import be.ragga.raggabackend.simulation.grid.generation.GenerationConfig;
 import be.ragga.raggabackend.simulation.grid.generation.GenerationPipeline;
@@ -12,6 +16,7 @@ import be.ragga.raggabackend.simulation.grid.persistence.catalog.TemplateCatalog
 import be.ragga.raggabackend.simulation.grid.persistence.mapping.GenerationResultMapper;
 import be.ragga.raggabackend.simulation.grid.persistence.web.CityPngRenderer;
 import be.ragga.raggabackend.simulation.grid.persistence.web.CitySummary;
+import be.ragga.raggabackend.simulation.grid.persistence.web.EconomyHeatmapRenderer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,19 +40,28 @@ public class CityPersistenceService {
     private final GenerationResultMapper mapper;
     private final CityRepository cityRepository;
     private final CityPngRenderer pngRenderer;
+    private final EconomyHeatmapRenderer heatmapRenderer;
+    private final PopulationService populationService;
+    private final BusinessMarketService businessMarketService;
 
     public CityPersistenceService(GenerationPipeline pipeline,
                                   TemplateCatalog templateCatalog,
                                   BuildingTemplateRepository templateRepository,
                                   GenerationResultMapper mapper,
                                   CityRepository cityRepository,
-                                  CityPngRenderer pngRenderer) {
+                                  CityPngRenderer pngRenderer,
+                                  EconomyHeatmapRenderer heatmapRenderer,
+                                  PopulationService populationService,
+                                  BusinessMarketService businessMarketService) {
         this.pipeline = pipeline;
         this.templateCatalog = templateCatalog;
         this.templateRepository = templateRepository;
         this.mapper = mapper;
         this.cityRepository = cityRepository;
         this.pngRenderer = pngRenderer;
+        this.heatmapRenderer = heatmapRenderer;
+        this.populationService = populationService;
+        this.businessMarketService = businessMarketService;
     }
 
     /**
@@ -59,6 +73,31 @@ public class CityPersistenceService {
      */
     @Transactional
     public City generateAndSave(GenerationConfig config, long seed) {
+        return generateAndSave(config, null, null, seed);
+    }
+
+    /**
+     * As {@link #generateAndSave(GenerationConfig, long)}, but drives the residential
+     * economy pass with a request-supplied {@link EconomyConfig}. A null
+     * {@code economy} keeps the calibrated defaults; the business market keeps its
+     * default config.
+     */
+    @Transactional
+    public City generateAndSave(GenerationConfig config, EconomyConfig economy, long seed) {
+        return generateAndSave(config, economy, null, seed);
+    }
+
+    /**
+     * As above, but also drives the non-residential (business) market pass with a
+     * request-supplied {@link BusinessEconomyConfig} - the persisting twin of the
+     * tuner's economy sliders. Null overrides keep the respective calibrated
+     * defaults.
+     *
+     * @return the persisted city
+     */
+    @Transactional
+    public City generateAndSave(GenerationConfig config, EconomyConfig economy,
+                                BusinessEconomyConfig business, long seed) {
         List<TemplateSpec> catalog = templateCatalog.templates();
         GenerationResult result = pipeline.generate(config, catalog, seed);
 
@@ -66,6 +105,13 @@ public class CityPersistenceService {
                 .collect(java.util.stream.Collectors.toMap(BuildingTemplate::getCode, Function.identity()));
 
         City city = mapper.toCity(result, seed, config, templatesByCode);
+        // Give the freshly-mapped city a cleared housing market and a placed
+        // population, then price and own the non-residential stock with companies -
+        // all before persistence, so a saved city is born economically alive
+        // (values, rents, tenures, households, companies) and every owner/premises
+        // cross-link resolves within this one transaction.
+        populationService.populate(city, result, seed, economy);
+        businessMarketService.clear(city, result, seed, business);
         return cityRepository.save(city);
     }
 
@@ -95,5 +141,18 @@ public class CityPersistenceService {
     @Transactional(readOnly = true)
     public Optional<byte[]> renderPng(long id, int cellSize, boolean showFloors) {
         return cityRepository.findById(id).map(city -> pngRenderer.render(city, cellSize, showFloors));
+    }
+
+    /**
+     * Renders a stored city's residential economy to a PNG heatmap (see
+     * {@link EconomyHeatmapRenderer}). Transactional because rendering walks the
+     * lazy grid, buildings and households. Meaningful only for a city generated
+     * after the economy pass existed; older cities render as unpriced/vacant.
+     *
+     * @param mode value heatmap or tenure map
+     */
+    @Transactional(readOnly = true)
+    public Optional<byte[]> renderEconomyHeatmap(long id, int cellSize, EconomyHeatmapRenderer.Mode mode) {
+        return cityRepository.findById(id).map(city -> heatmapRenderer.render(city, cellSize, mode));
     }
 }

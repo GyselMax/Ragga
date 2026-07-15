@@ -217,12 +217,25 @@ possible, and only then fill the depth. Each candidate is scored by
 (frontage gap, depth gap) and the lexicographically smallest wins — so a
 perfect fill beats a shallower building that still spans the whole street,
 which in turn beats a narrower one that leaves a hole in the street; narrowing
-the frontage is the last resort. One of the equally-best fits is picked at
-random for variety. The core packs tight because its small lots make perfect
-fills easy; big edge lots get big buildings for the same reason, so the
-core→edge size gradient falls out of the **lot** sizes (fine downtown, coarse
+the frontage is the last resort. The core packs tight because its small lots
+make perfect fills easy; big edge lots get big buildings for the same reason, so
+the core→edge size gradient falls out of the **lot** sizes (fine downtown, coarse
 at the rim) rather than any fill target. If nothing in the library fits, the
 lot simply stays vacant — generation never fails on a sparse catalog.
+
+The tie-break among equally-best fits is **density-aware for residential lots**
+(uniform-random everywhere else). Because the catalog carries a capacity-1
+single-family house at every footprint a residential block also occupies, most
+residential lots have both an ownable house and a multi-dwelling block as
+equally-good fits. A block is then chosen only with probability
+`clamp(BLOCK_PROB_SLOPE·(u − BLOCK_PROB_INTERCEPT), 0, BLOCK_PROB_MAX)`, rising
+with the lot's local urbanness `u` — so **houses are the default everywhere and
+blocks merely concentrate toward the dense core**. This is what makes capacity-1
+homes a *majority of dwellings* (not just of buildings), the precondition the
+economy needs for realistic owner-occupancy (only capacity-1 homes are
+owner-occupied; see ECONOMY.md). The constants are tuned against the
+`EconomyVisualizer` tenure report; the surviving core blocks are the rental /
+future company-owned stock. `place()` therefore takes the `DensityField`.
 
 Public sites get a public template the same way; their whole parcel turns
 into `PUBLIC` tiles (building + surrounding plaza). If no public template
@@ -286,7 +299,9 @@ snapshot and drift during tuning.
 | `riverMaxDrift` | how far the river may meander from its base line — the big lazy curves | 60 |
 | `maxCityRadius` | absolute cap on the main city radius in tiles (0 = scales with the map) | 0 |
 | `forestsEnabled` | noise-carved woodland at the rim and corners | true |
+| `forestDensity` | how much woodland the rural land carries — higher lowers the FOREST noise cutoff (never adds forest downtown) | 0.42 |
 | `farmlandDensityThreshold` | below this density the map turns rural: no splits, tripled parcels, locked FARMLAND | 0.25 |
+| `farmlandSizeMultiplier` | extra scale on farm parcel depth / widest-field ceiling, on top of the rural belt's built-in enlargement | 1.0 |
 | `cityCount` | number of city cores; > 1 adds satellite cities (needs `maxCityRadius` > 0) | 1 |
 | `satelliteMinScale` / `satelliteMaxScale` | satellite radius as a fraction of the main city radius | 0.45 / 0.75 |
 | `satellitePeakDensity` | peak density at a satellite center (a town, not a second downtown) | 0.85 |
@@ -295,6 +310,7 @@ snapshot and drift during tuning.
 | `hamletPeakDensity` | peak density at a hamlet center | 0.45 |
 | `minSettlementSpacing` | minimum hamlet center-to-center distance | 60 |
 | `settlementConnectionCount` | nearest neighbors each settlement links to by road | 2 |
+| `cityConnectionCount` | extra direct road links between cities (main + satellites only), on top of the general settlement graph | 2 |
 | `edgeExitCount` | roads leaving the map toward the wider world | 2 |
 
 ## Sanity check invariants (`GenerationSanityCheck`)

@@ -34,10 +34,10 @@ class BuildingTemplateSeederTest {
     }
 
     @Test
-    void backfillsCapacityAndFloorsOnPreColumnRows() {
-        // Simulate a row seeded before householdCapacity/floors existed:
-        // ddl-auto=update adds both columns with 0 on existing rows.
-        repository.save(new BuildingTemplate("RES_HOUSE_2X2", ZoneType.RESIDENTIAL, false, 2, 2, 0, 0));
+    void backfillsCapacityFloorsAndTierOnPreColumnRows() {
+        // Simulate a row seeded before householdCapacity/floors/qualityTier
+        // existed: ddl-auto=update adds each column with 0 on existing rows.
+        repository.save(new BuildingTemplate("RES_HOUSE_2X2", ZoneType.RESIDENTIAL, false, 2, 2, 0, 0, 0));
 
         new BuildingTemplateSeeder(repository).run();
 
@@ -48,15 +48,17 @@ class BuildingTemplateSeederTest {
                 "stub-known residential row stuck at 0 capacity must be backfilled from the stub");
         assertEquals(2, backfilled.getFloors(),
                 "stub-known row stuck at 0 floors must be backfilled from the stub");
+        assertEquals(2, backfilled.getQualityTier(),
+                "stub-known row stuck at 0 qualityTier must be backfilled from the stub");
         // Non-empty table: the seeder must not have re-inserted the library.
         assertEquals(1, repository.count(), "backfill must not re-seed the catalog");
     }
 
     @Test
     void neverClobbersHandEditedValues() {
-        // A live-game admin bumped this template's capacity and floors; the
-        // seeder must leave both alone even though the stub disagrees.
-        repository.save(new BuildingTemplate("RES_HOUSE_2X2", ZoneType.RESIDENTIAL, false, 2, 2, 4, 7));
+        // A live-game admin bumped this template's capacity, floors and tier;
+        // the seeder must leave all three alone even though the stub disagrees.
+        repository.save(new BuildingTemplate("RES_HOUSE_2X2", ZoneType.RESIDENTIAL, false, 2, 2, 4, 7, 5));
 
         new BuildingTemplateSeeder(repository).run();
 
@@ -67,5 +69,7 @@ class BuildingTemplateSeederTest {
                 "hand-edited nonzero capacity must never be overwritten by the seeder");
         assertEquals(4, untouched.getFloors(),
                 "hand-edited nonzero floors must never be overwritten by the seeder");
+        assertEquals(5, untouched.getQualityTier(),
+                "hand-edited nonzero qualityTier must never be overwritten by the seeder");
     }
 }

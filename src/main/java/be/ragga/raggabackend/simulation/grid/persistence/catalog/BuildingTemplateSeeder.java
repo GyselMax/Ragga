@@ -19,9 +19,9 @@ import java.util.stream.Collectors;
  *
  * It DOES backfill columns that ddl-auto=update added after a row was first
  * seeded: `update` alters the table with a zero default on existing rows (it
- * cannot know the authored values), so a stub-known row whose householdCapacity
- * or floors is still 0 gets the stub's value on the next boot. Hand-edited
- * nonzero values are never touched.
+ * cannot know the authored values), so a stub-known row whose householdCapacity,
+ * floors or qualityTier is still 0 gets the stub's value on the next boot.
+ * Hand-edited nonzero values are never touched.
  */
 @Component
 public class BuildingTemplateSeeder implements CommandLineRunner {
@@ -55,6 +55,10 @@ public class BuildingTemplateSeeder implements CommandLineRunner {
             }
             if (template.getFloors() == 0 && stub.floors() > 0) {
                 template.setFloors(stub.floors());
+                changed = true;
+            }
+            if (template.getQualityTier() == 0 && stub.qualityTier() > 0) {
+                template.setQualityTier(stub.qualityTier());
                 changed = true;
             }
             if (changed) {

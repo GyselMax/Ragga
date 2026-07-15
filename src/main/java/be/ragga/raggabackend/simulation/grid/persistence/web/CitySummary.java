@@ -47,6 +47,6 @@ public record CitySummary(
                 city.getLots().size(),
                 city.getRoads().size(),
                 city.getBuildings().size(),
-                city.getSimulatedBuildings().size());
+                city.getEconomicBuildings().size());
     }
 }

@@ -99,8 +99,8 @@ public class GenerationPipeline {
         }
 
         zoneAssignmentService.assign(lots, config, density, random);
-        List<BuildingDraft> buildings = buildingPlacementService.place(lots, catalog, tiles, random);
+        List<BuildingDraft> buildings = buildingPlacementService.place(lots, catalog, tiles, density, random);
 
-        return new GenerationResult(config, tiles, network.roadClasses(), network.roads(), lots, buildings);
+        return new GenerationResult(config, tiles, network.roadClasses(), network.roads(), lots, buildings, density);
     }
 }

@@ -36,17 +36,35 @@ public final class StubTemplateCatalog {
                 // not derived from footprint alone: the mansions are large
                 // single-family estates (capacity 1) despite their area, while
                 // the tower packs 4 units per floor into a modest footprint.
-                residential("RES_HOUSE_2X2", 2, 2, 2, 1),
-                residential("RES_HOUSE_2X3", 2, 3, 2, 1),
-                residential("RES_ROWHOUSE_2X4", 2, 4, 2, 2),
-                residential("RES_LOWRISE_3X3", 3, 3, 3, 3),
-                residential("RES_MIDRISE_3X4", 3, 4, 5, 5),
-                residential("RES_APARTMENT_4X4", 4, 4, 6, 12),
-                residential("RES_TERRACE_5X4", 5, 4, 3, 6),
-                residential("RES_BLOCK_6X4", 6, 4, 6, 18),
-                residential("RES_HIGHRISE_6X6", 6, 6, 15, 60),
-                residential("RES_MANSION_8X8", 8, 8, 2, 1),
-                residential("RES_BIG_MANSION_10X10", 10, 10, 3, 1),
+                // qualityTier (1..5) is the blueprint's prestige: plain houses
+                // sit low, the mansions are villas at the top - so at equal
+                // location a mansion still outsells a rowhouse.
+                residential("RES_HOUSE_2X2", 2, 2, 2, 1, 2),
+                residential("RES_HOUSE_2X3", 2, 3, 2, 1, 2),
+                residential("RES_ROWHOUSE_2X4", 2, 4, 2, 2, 2),
+                // Single-family houses (capacity 1), one for every footprint a
+                // residential block also occupies, so on any lot a cap-1 home
+                // is a best-fit candidate the density-aware placement can pick.
+                // Only capacity-1 buildings can be owner-occupied, so this is
+                // the ownable-stock supply the placement then steers into the
+                // low-density rings while the blocks stay in the dense core
+                // (see BuildingPlacementService). Their dwelling share, not just
+                // their building share, is what sets the owner-occupancy rate.
+                residential("RES_COTTAGE_2X4", 2, 4, 2, 1, 2),
+                residential("RES_COTTAGE_3X3", 3, 3, 2, 1, 3),
+                residential("RES_DETACHED_3X4", 3, 4, 2, 1, 3),
+                residential("RES_DETACHED_4X4", 4, 4, 2, 1, 3),
+                residential("RES_VILLA_5X4", 5, 4, 2, 1, 4),
+                residential("RES_LARGEHOUSE_6X4", 6, 4, 2, 1, 4),
+                residential("RES_MANSION_6X6", 6, 6, 2, 1, 5),
+                residential("RES_LOWRISE_3X3", 3, 3, 3, 3, 3),
+                residential("RES_MIDRISE_3X4", 3, 4, 5, 4, 3),
+                residential("RES_APARTMENT_4X4", 4, 4, 6, 9, 3),
+                residential("RES_TERRACE_5X4", 5, 4, 3, 5, 3),
+                residential("RES_BLOCK_6X4", 6, 4, 6, 12, 3),
+                residential("RES_HIGHRISE_6X6", 6, 6, 15, 30, 4),
+                residential("RES_MANSION_8X8", 8, 8, 2, 1, 5),
+                residential("RES_BIG_MANSION_10X10", 10, 10, 3, 1, 5),
 
                 commercial("COM_KIOSK_1X1", 1, 1, 1),
                 commercial("COM_SHOP_2X2", 2, 2, 2),
@@ -78,28 +96,34 @@ public final class StubTemplateCatalog {
         );
     }
 
-    private static TemplateSpec residential(String code, int width, int depth, int floors, int householdCapacity) {
-        return template(code, RESIDENTIAL, width, depth, floors, householdCapacity);
+    // Blueprint prestige for non-residential/public templates: economically
+    // inert (only residential valuation reads qualityTier) but kept mid-range
+    // and non-zero so the column is always meaningfully populated.
+    private static final int NEUTRAL_TIER = 3;
+
+    private static TemplateSpec residential(String code, int width, int depth, int floors,
+                                            int householdCapacity, int qualityTier) {
+        return template(code, RESIDENTIAL, width, depth, floors, householdCapacity, qualityTier);
     }
 
     private static TemplateSpec commercial(String code, int width, int depth, int floors) {
-        return template(code, COMMERCIAL, width, depth, floors, 0);
+        return template(code, COMMERCIAL, width, depth, floors, 0, NEUTRAL_TIER);
     }
 
     private static TemplateSpec industrial(String code, int width, int depth, int floors) {
-        return template(code, INDUSTRIAL, width, depth, floors, 0);
+        return template(code, INDUSTRIAL, width, depth, floors, 0, NEUTRAL_TIER);
     }
 
     private static TemplateSpec farm(String code, int width, int depth, int floors) {
-        return template(code, FARMLAND, width, depth, floors, 0);
+        return template(code, FARMLAND, width, depth, floors, 0, NEUTRAL_TIER);
     }
 
     private static TemplateSpec template(String code, ZoneType zone, int width, int depth,
-                                         int floors, int householdCapacity) {
-        return new TemplateSpec(code, zone, false, width, depth, floors, householdCapacity);
+                                         int floors, int householdCapacity, int qualityTier) {
+        return new TemplateSpec(code, zone, false, width, depth, floors, householdCapacity, qualityTier);
     }
 
     private static TemplateSpec publicUse(String code, int width, int depth, int floors) {
-        return new TemplateSpec(code, null, true, width, depth, floors, 0);
+        return new TemplateSpec(code, null, true, width, depth, floors, 0, NEUTRAL_TIER);
     }
 }
