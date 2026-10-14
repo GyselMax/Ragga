@@ -22,6 +22,8 @@ import java.util.List;
 @Component
 public class GraphGenerator implements CommandLineRunner {
     // import constants
+    @Value("${GENERATION_SEED}")
+    private int GENERATION_SEED;
     @Value("${GRID_WIDTH}")
     private int GRID_WIDTH;
     @Value("${GRID_HEIGHT}")
@@ -47,7 +49,7 @@ public class GraphGenerator implements CommandLineRunner {
     @Override
     public void run(String @NonNull ... args) throws Exception {
         // initialize starter random and graph
-        Random random = new Random();
+        Random random = new Random(GENERATION_SEED);
         Graph<Node, DefaultEdge> graph = new SimpleWeightedGraph<>(DefaultEdge.class);
 
         // starter nodes aka seeds
@@ -154,8 +156,7 @@ public class GraphGenerator implements CommandLineRunner {
 
     /* ALL EDGE GENERATION (mostly by claude) */
 
-    // EDGE GENERATION ITSELF //
-
+    /// EDGE GENERATION ITSELF ///
     // (MAIN CODE) - generates edges following the sanity checks
     private void generateEdges(@NonNull Graph<Node, DefaultEdge> graph, Random random) {
         // random start order, but driven by the seeded rng so runs stay reproducible
@@ -228,8 +229,7 @@ public class GraphGenerator implements CommandLineRunner {
     }
 
 
-    // SANITY CHECKS //
-
+    /// SANITY CHECKS ///
     // (MAIN CODE) - every constraint, cheapest first so the expensive ones rarely run
     private boolean passesEdgeConstraints(@NonNull Graph<Node, DefaultEdge> graph, Node a, Node b) {
         return isDegreeWithinLimit(graph, a, b)
@@ -291,7 +291,7 @@ public class GraphGenerator implements CommandLineRunner {
     }
 
 
-    // RENDERER //
+    /// RENDERER ///
     private void drawGraph(@NonNull Graph<Node, DefaultEdge> graph) throws IOException {
         BufferedImage image = new BufferedImage(GRID_WIDTH, GRID_HEIGHT, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2 = image.createGraphics();
