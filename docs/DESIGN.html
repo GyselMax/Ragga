@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ragga Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Literata:ital,wght@0,400;0,600;1,400&family=Schibsted+Grotesk:wght@500;700;800&display=swap">
+<style>
+/* same visual language as java-notes.html: folders on the left, one reading column on the right */
+:root {
+  --paper: #f3f5f4;
+  --sheet: #ffffff;
+  --ink: #1a2228;
+  --ink-soft: #4d5a63;
+  --rule: #d3dbdd;
+  --accent: #1c5a85;
+  --accent-soft: #e2ecf3;
+  --warn: #8f5310;
+  --warn-soft: #f6ebdb;
+  --ok: #24683a;
+  --ok-soft: #dcefe2;
+  --bad: #9a2c2c;
+  --bad-soft: #f6dede;
+  --code-bg: #eceff0;
+  --f-display: "Schibsted Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Literata", Georgia, "Times New Roman", serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #12171b; --sheet: #182027; --ink: #dde4e8; --ink-soft: #9cabb5; --rule: #2c3841;
+    --accent: #86bbe0; --accent-soft: #1c3042; --warn: #e0aa5c; --warn-soft: #33281a; --code-bg: #1b232a;
+    --ok: #8fd0a2; --ok-soft: #1f3d2a; --bad: #f0a0a0; --bad-soft: #45242a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #12171b; --sheet: #182027; --ink: #dde4e8; --ink-soft: #9cabb5; --rule: #2c3841;
+  --accent: #86bbe0; --accent-soft: #1c3042; --warn: #e0aa5c; --warn-soft: #33281a; --code-bg: #1b232a;
+  --ok: #8fd0a2; --ok-soft: #1f3d2a; --bad: #f0a0a0; --bad-soft: #45242a;
+  color-scheme: dark;
+}
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: 17px; line-height: 1.62; }
+a { color: var(--accent); }
+code { font-family: var(--f-mono); font-size: .84em; background: var(--code-bg); padding: .08em .35em; border-radius: 4px; overflow-wrap: anywhere; }
+strong { font-weight: 600; }
+
+.page { max-width: 80rem; margin: 0 auto; padding-inline: 24px; padding-block: 48px 96px; display: grid; grid-template-columns: 16.5rem minmax(0, 1fr); gap: 2.5rem 3.5rem; }
+@media (max-width: 880px) { .page { grid-template-columns: minmax(0, 1fr); padding-inline: 16px; padding-block: 28px 64px; gap: 2rem; } }
+.eyebrow, .label { font-family: var(--f-display); font-weight: 700; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; line-height: 1.3; margin: 0; }
+
+/* MASTHEAD */
+.masthead { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.5rem 2.5rem; align-items: end; padding-bottom: 2rem; border-bottom: 1px solid var(--rule); }
+.masthead-text { display: flex; flex-direction: column; gap: .7rem; min-width: 0; }
+.masthead .eyebrow { color: var(--accent); }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(2.2rem, 5.5vw, 3.5rem); line-height: 1.04; letter-spacing: -.025em; margin: 0; text-wrap: balance; }
+.lede { font-size: 1.12rem; color: var(--ink-soft); max-width: 62ch; margin: 0; }
+.meta { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-soft); margin: 0; }
+.badge { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .35rem; min-width: 16rem; }
+.badge > * { margin: 0; }
+.badge .label { color: var(--ink-soft); }
+.badge-word { font-family: var(--f-display); font-weight: 800; font-size: 1.45rem; line-height: 1.15; }
+.pips { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.pips span { height: .45rem; border-radius: 99px; background: var(--code-bg); }
+.pips .done { background: var(--ok); }
+.pips .now { background: var(--accent); }
+.badge-note { font-family: var(--f-mono); font-size: 12px; color: var(--ink-soft); }
+@media (max-width: 880px) { .masthead { grid-template-columns: minmax(0, 1fr); } .badge { min-width: 0; } }
+
+/* INDEX, in folders */
+.toc { position: sticky; top: 24px; align-self: start; display: flex; flex-direction: column; gap: .3rem; max-height: calc(100vh - 48px); overflow-y: auto; }
+.toc details > summary { display: flex; align-items: center; gap: .5rem; padding: .5rem .6rem; border-radius: 6px; cursor: pointer; list-style: none; font-family: var(--f-display); font-weight: 700; font-size: 14px; }
+.toc details > summary::-webkit-details-marker { display: none; }
+.toc details > summary::before { content: "▸"; width: .8rem; font-size: 11px; color: var(--ink-soft); transition: transform .15s; }
+.toc details[open] > summary::before { transform: rotate(90deg); }
+.toc details > summary:hover { background: var(--accent-soft); }
+.toc details > summary:focus-visible, .toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toc-n { margin-left: auto; font-family: var(--f-mono); font-size: 11.5px; font-weight: 600; color: var(--ink-soft); }
+.toc ol { list-style: none; margin: 0; padding: 0 0 .35rem .55rem; display: flex; flex-direction: column; gap: 2px; }
+.toc a { display: block; padding: .42rem .6rem; border-radius: 6px; color: var(--ink-soft); text-decoration: none; font-family: var(--f-display); font-weight: 500; font-size: 14px; line-height: 1.35; }
+.toc a:hover, .toc a[aria-current="true"] { background: var(--accent-soft); color: var(--ink); }
+@media (max-width: 880px) { .toc { position: static; max-height: none; } }
+@media (prefers-reduced-motion: reduce) { .toc details > summary::before { transition: none; } }
+
+/* SECTIONS */
+main { min-width: 0; display: flex; flex-direction: column; gap: 4rem; container-type: inline-size; }
+.part-head { display: flex; flex-direction: column; gap: .4rem; padding-top: 1rem; border-top: 3px solid var(--ink); }
+.part-head .eyebrow { color: var(--ink-soft); }
+.part-head h2 { font-family: var(--f-display); font-weight: 800; font-size: clamp(1.7rem, 3.6vw, 2.4rem); line-height: 1.1; margin: 0; letter-spacing: -.015em; }
+section.s { display: flex; flex-direction: column; gap: 1.15rem; scroll-margin-top: 24px; min-width: 0; }
+section.s > * { margin: 0; }
+section.s + section.s { padding-top: 3.2rem; border-top: 1px solid var(--rule); }
+.s-tag { color: var(--accent); }
+section.s h3 { font-family: var(--f-display); font-weight: 700; font-size: clamp(1.4rem, 3vw, 1.9rem); line-height: 1.17; letter-spacing: -.012em; max-width: 32ch; text-wrap: balance; }
+section.s h4 { font-family: var(--f-display); font-weight: 700; font-size: 1.1rem; line-height: 1.3; margin-top: .4rem; }
+section.s p, section.s li { max-width: 70ch; }
+section.s ul.plain, section.s ol.plain { padding-left: 1.3rem; display: flex; flex-direction: column; gap: .35rem; }
+.soft { color: var(--ink-soft); }
+
+/* CALLOUTS */
+.callout { border-radius: 8px; padding: .95rem 1.15rem; display: flex; flex-direction: column; gap: .35rem; max-width: 76ch; }
+.callout > * { margin: 0; }
+.callout.warn { background: var(--warn-soft); }
+.callout.warn .label { color: var(--warn); }
+.callout.info { background: var(--accent-soft); }
+.callout.info .label { color: var(--accent); }
+.callout ul { padding-left: 1.2rem; display: flex; flex-direction: column; gap: .25rem; }
+
+/* PANELS */
+.dual { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+@container (max-width: 46rem) { .dual { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 1.1rem 1.2rem 1.2rem; display: flex; flex-direction: column; gap: .6rem; min-width: 0; }
+.panel > * { margin: 0; }
+.panel .label { color: var(--ink-soft); }
+.panel ul { padding-left: 1.1rem; display: flex; flex-direction: column; gap: .25rem; font-size: .96rem; }
+
+/* TABLES */
+.tbl { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; line-height: 1.5; }
+th, td { text-align: left; padding: .6rem .9rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-family: var(--f-display); font-weight: 700; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper); white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+td.topic { font-family: var(--f-display); font-weight: 700; font-size: .95rem; min-width: 8.5rem; }
+td.num { font-family: var(--f-mono); font-size: .88rem; white-space: nowrap; }
+td.date { font-family: var(--f-mono); font-size: .85rem; white-space: nowrap; color: var(--ink-soft); }
+.wide-tbl table { min-width: 42rem; }
+
+/* CHIPS */
+.chip { display: inline-block; font-family: var(--f-display); font-weight: 700; font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; padding: .18em .6em; border-radius: 99px; white-space: nowrap; line-height: 1.5; }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.info { background: var(--accent-soft); color: var(--accent); }
+.chip.mute { background: var(--code-bg); color: var(--ink-soft); }
+
+/* PIPELINE (one row of boxes with arrows) */
+.pipe { display: flex; flex-wrap: wrap; align-items: stretch; gap: .5rem; }
+.pipe .box { flex: 1 1 7rem; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: .7rem .85rem; display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+.pipe .box > * { margin: 0; }
+.pipe .box .label { color: var(--accent); }
+.pipe .box p { font-size: .9rem; line-height: 1.45; }
+.pipe .box.planned { border-style: dashed; }
+.pipe .arrow { align-self: center; color: var(--ink-soft); font-family: var(--f-mono); font-size: 1.1rem; flex: none; }
+@container (max-width: 40rem) { .pipe { flex-direction: column; } .pipe .arrow { transform: rotate(90deg); } }
+.store-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+.store-row .box { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px; padding: .7rem .85rem; display: flex; flex-direction: column; gap: .2rem; }
+.store-row .box > * { margin: 0; }
+.store-row .box .label { color: var(--ink-soft); }
+.store-row .box p { font-size: .9rem; line-height: 1.45; }
+@container (max-width: 40rem) { .store-row { grid-template-columns: minmax(0, 1fr); } }
+
+/* MONEY DIAGRAM */
+.figure { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: .6rem; }
+.figure > * { margin: 0; }
+.figure svg { width: 100%; height: auto; display: block; }
+.figure figcaption { font-size: .92rem; color: var(--ink-soft); }
+.d-box { fill: var(--paper); stroke: var(--rule); stroke-width: 1.5; }
+.d-box.key { fill: var(--accent-soft); stroke: var(--accent); }
+.d-title { font-family: var(--f-display); font-weight: 700; font-size: 16px; fill: var(--ink); }
+.d-sub { font-family: var(--f-display); font-size: 12px; fill: var(--ink-soft); }
+.d-flow { fill: none; stroke: var(--ink-soft); stroke-width: 1.8; }
+.d-flow.in { stroke: var(--ok); stroke-width: 2.4; }
+.d-flow.open { stroke-dasharray: 6 5; }
+.d-lbl { font-family: var(--f-display); font-size: 12.5px; font-weight: 600; fill: var(--ink-soft); }
+.d-lbl.in { fill: var(--ok); }
+.d-head { fill: var(--ink-soft); }
+.d-head.in { fill: var(--ok); }
+
+/* ROADMAP STEPS */
+.steps { list-style: none; counter-reset: step; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1.3rem; max-width: 78ch; }
+.steps > li { counter-increment: step; display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: .8rem; }
+.steps > li::before { content: counter(step); width: 1.85rem; height: 1.85rem; border-radius: 50%; background: var(--code-bg); color: var(--ink-soft); font: 600 13px/1.85rem var(--f-mono); text-align: center; }
+.steps > li.done::before { background: var(--ok); color: var(--sheet); }
+.steps > li.now::before { background: var(--accent); color: var(--sheet); }
+.steps > li.next::before { background: var(--warn); color: var(--sheet); }
+.step-body { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
+.step-body > * { margin: 0; }
+.step-body h4 { font-family: var(--f-display); font-size: 1.1rem; font-weight: 700; line-height: 1.35; display: flex; flex-wrap: wrap; gap: .3rem .6rem; align-items: baseline; margin: 0; }
+.step-body ul { padding-left: 1.1rem; display: flex; flex-direction: column; gap: .2rem; }
+.done-when { font-size: .95rem; color: var(--ink-soft); }
+.done-when b { font-family: var(--f-display); color: var(--ok); }
+
+/* GLOSSARY */
+dl.gloss { display: grid; grid-template-columns: 11rem minmax(0, 1fr); gap: .55rem 1.2rem; margin: 0; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem 1.2rem; }
+dl.gloss dt { font-family: var(--f-display); font-weight: 700; font-size: .95rem; }
+dl.gloss dd { margin: 0; font-size: .96rem; }
+@container (max-width: 40rem) { dl.gloss { grid-template-columns: minmax(0, 1fr); } dl.gloss dd { margin-bottom: .5rem; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="masthead">
+  <div class="masthead-text">
+    <p class="eyebrow">Design document · 2026-10-26</p>
+    <h1>Ragga design</h1>
+    <p class="lede">What Ragga is, what's decided, and the order it gets built in. This is the living design doc for the graph rewrite. It replaces <code>design-2.0.md</code> from the old grid model, which stays as history.</p>
+    <p class="meta">repo: ragga · package be.magycks.ragga · Spring Boot 4.1 · Java 25 · JGraphT 1.5.3 · MySQL</p>
+  </div>
+  <div class="badge" aria-label="Roadmap position: step 2 of 7">
+    <p class="label">Now</p>
+    <p class="badge-word">Step 2 of 7</p>
+    <div class="pips" aria-hidden="true"><span class="done"></span><span class="now"></span><span></span><span></span><span></span><span></span><span></span></div>
+    <p class="badge-note">safety net + quadtree · next: economy spike</p>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <details open>
+    <summary>Overview <span class="toc-n">3</span></summary>
+    <ol>
+      <li><a href="#what">What Ragga is</a></li>
+      <li><a href="#goals">Goals</a></li>
+      <li><a href="#state">Current state</a></li>
+    </ol>
+  </details>
+  <details open>
+    <summary>Design <span class="toc-n">5</span></summary>
+    <ol>
+      <li><a href="#generation">Generation</a></li>
+      <li><a href="#determinism">Determinism rules</a></li>
+      <li><a href="#server">Multiplayer server</a></li>
+      <li><a href="#time">Time and ticks</a></li>
+      <li><a href="#economy">Economy spike</a></li>
+    </ol>
+  </details>
+  <details open>
+    <summary>Plan <span class="toc-n">2</span></summary>
+    <ol>
+      <li><a href="#roadmap">Roadmap</a></li>
+      <li><a href="#open">Open questions</a></li>
+    </ol>
+  </details>
+  <details>
+    <summary>Reference <span class="toc-n">5</span></summary>
+    <ol>
+      <li><a href="#decisions">Decision log</a></li>
+      <li><a href="#out">Out of scope</a></li>
+      <li><a href="#carried">Carried over</a></li>
+      <li><a href="#rules">Working rules</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+  </details>
+</nav>
+
+<main>
+
+<!-- ================= OVERVIEW ================= -->
+<div class="part-head">
+  <p class="eyebrow">Overview</p>
+  <h2>The project</h2>
+</div>
+
+<section class="s" id="what">
+  <p class="label s-tag">What Ragga is</p>
+  <h3>A multiplayer city simulation that runs on its own before players arrive</h3>
+  <p>Ragga generates a city as a street graph, fills it with households and companies, and runs it week by week on a Java server. Cities: Skylines II is the design reference. The core rule, carried over from the old design: <strong>the city must sustain itself</strong>. Economy, jobs, spending and housing keep working with no player input. Players join a living world; they aren't the reason it exists.</p>
+  <div class="dual">
+    <div class="panel">
+      <p class="label">Built so far</p>
+      <ul>
+        <li>Graph generation: intersections and streets from a seed</li>
+        <li>City codes: settings + seed in 42 characters</li>
+        <li>Quadtree types (builder still in progress)</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <p class="label">Still to build</p>
+      <ul>
+        <li>The economy loop, lots and zoning</li>
+        <li>People, jobs and the tick loop on the server</li>
+        <li>Life events and the multiplayer client</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="goals">
+  <p class="label s-tag">Goals</p>
+  <h3>Building the simulation comes first</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Goal</th><th>Rank</th><th>What it means for decisions</th></tr></thead>
+      <tbody>
+        <tr><td class="topic">Build the simulation</td><td><span class="chip ok">first</span></td><td>When two paths compete, pick the one that gets closer to a city that runs itself. Generation only needs to be good enough for that.</td></tr>
+        <tr><td class="topic">Learn deeply</td><td><span class="chip mute">not ranked</span></td><td>The code is hand-written by Max on purpose. Speed never justifies pasting reference code.</td></tr>
+        <tr><td class="topic">Be hireable</td><td><span class="chip mute">not ranked</span></td><td>Tests in the build, a README, and clean commits come along with the work rather than as a separate project.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="s" id="state">
+  <p class="label s-tag">Current state · 2026-10-26</p>
+  <h3>Generation works; nothing is tested inside the build yet</h3>
+  <div class="tbl wide-tbl">
+    <table>
+      <thead><tr><th>Area</th><th>State</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td class="topic">Generation</td><td><span class="chip ok">works</span></td><td>Seed 67 gives <strong>326 nodes / 549 streets</strong> in ~0.3 s.</td></tr>
+        <tr><td class="topic">Tests</td><td><span class="chip bad">none useful</span></td><td>The only test is <code>contextLoads</code>, which needs a local MySQL. The 326/549 check is a <code>println</code>.</td></tr>
+        <tr><td class="topic">Git index</td><td><span class="chip bad">broken</span></td><td>The staged quadtree files are old placeholders (<code>FrozenQuadtree</code>, <code>BranchDoesNotHave4ChildrenError</code>). Re-add the real files before committing.</td></tr>
+        <tr><td class="topic"><code>CityConfig</code></td><td><span class="chip mute">unused</span></td><td><code>GraphGenerator</code> still reads <code>@Value</code> fields and hardcodes the starter node. Its seed is an <code>int</code>, the code's is a <code>long</code>.</td></tr>
+        <tr><td class="topic">Quadtree</td><td><span class="chip info">in progress</span></td><td>Records and <code>sealed QuadSquare</code> written; <code>QuadTreeBuilder</code>'s <code>split</code>, <code>build</code>, <code>freeze</code> and <code>findWithin</code> are stubs.</td></tr>
+        <tr><td class="topic"><code>Node</code></td><td><span class="chip warn">tidy up</span></td><td>A JPA <code>@Entity</code> that nothing saves; <code>degree</code> is never set.</td></tr>
+        <tr><td class="topic">Config</td><td><span class="chip warn">tidy up</span></td><td><code>application.properties</code> comments describe the old repo; <code>spring.test.database.replace=none</code> sends future JPA tests to MySQL.</td></tr>
+        <tr><td class="topic">Old repo</td><td><span class="chip bad">at risk</span></td><td>The grid model's economy and company code (57 passing tests) was never committed, and exists only on this disk. Archiving is pending.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ================= DESIGN ================= -->
+<div class="part-head">
+  <p class="eyebrow">Design</p>
+  <h2>How it works</h2>
+</div>
+
+<section class="s" id="generation">
+  <p class="label s-tag">Generation</p>
+  <h3>From starter nodes to a street graph</h3>
+  <p>The city is a JGraphT graph: nodes are intersections, edges are streets. Node growth and street growth come from the worldsmith road-network write-up (zero.re); Parish &amp; Müller (2001) is background reading.</p>
+  <div class="pipe">
+    <div class="box"><p class="label">1 · Starters</p><p>Seed nodes with a position and a split number.</p></div>
+    <span class="arrow" aria-hidden="true">→</span>
+    <div class="box"><p class="label">2 · Node growth</p><p>Breadth-first: each node tries 16 candidates 40–120 away and keeps those far enough from everything.</p></div>
+    <span class="arrow" aria-hidden="true">→</span>
+    <div class="box"><p class="label">3 · Streets</p><p><code>growStreet</code> extends streets node by node, picking the best candidate that passes every rule.</p></div>
+    <span class="arrow" aria-hidden="true">→</span>
+    <div class="box planned"><p class="label">4 · Quadtree</p><p>Spatial index so “what's near here?” stops scanning every node.</p></div>
+    <span class="arrow" aria-hidden="true">→</span>
+    <div class="box planned"><p class="label">5 · Lots + zoning</p><p>Blocks from the graph's faces, sized by the economy spike.</p></div>
+  </div>
+  <div class="dual">
+    <div class="panel">
+      <p class="label">Street rules (all must pass)</p>
+      <ul>
+        <li>Both ends have fewer than 4 streets</li>
+        <li>The two nodes aren't already linked</li>
+        <li>It doesn't close a triangle</li>
+        <li>No angle under 30° with an existing street at either end</li>
+        <li>It crosses no existing street</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <p class="label">Choosing the next node</p>
+      <ul>
+        <li>Only nodes within 120 are candidates</li>
+        <li>Score = 1 × straightness + 4 × closeness</li>
+        <li>The street ends when no candidate passes</li>
+        <li>Start nodes are shuffled by the seeded random</li>
+      </ul>
+    </div>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Setting</th><th>Default</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td class="topic">Map size</td><td class="num">1500 × 1500</td><td>Nodes outside it are rejected.</td></tr>
+        <tr><td class="topic">Starter</td><td class="num">(750, 750), 5.5</td><td>One starter in the centre with split number 5.5.</td></tr>
+        <tr><td class="topic">Node spacing</td><td class="num">40 + 0–80</td><td>Minimum distance, plus the random extra reach of a candidate.</td></tr>
+        <tr><td class="topic">Candidates</td><td class="num">16</td><td>Tries per splitting node.</td></tr>
+        <tr><td class="topic">Street search</td><td class="num">120</td><td>How far a street looks for its next node.</td></tr>
+        <tr><td class="topic">Score weights</td><td class="num">1 / 4</td><td>Straightness / closeness.</td></tr>
+        <tr><td class="topic">Angle, degree</td><td class="num">30° / 4</td><td>Minimum angle between streets; most streets per node.</td></tr>
+        <tr><td class="topic">Seed</td><td class="num">67</td><td>Golden check: 326 nodes / 549 streets.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="soft">All of these travel in a <strong>city code</strong> (<code>CityConfig</code>): a version byte, every setting, the starters, the seed and a checksum, packed into URL-safe text. One starter makes a 42-character code. The quadtree is kept in memory and rebuilt after loading; it's never saved.</p>
+</section>
+
+<section class="s" id="determinism">
+  <p class="label s-tag">Determinism rules</p>
+  <h3>Same code in, same city out, on every machine</h3>
+  <p>City codes, golden tests and crash recovery on the server all depend on this. Break one rule and the city quietly changes between runs.</p>
+  <ol class="plain">
+    <li><strong>One shared seeded <code>Random</code></strong>, drawn from in a fixed order.</li>
+    <li><strong>Ordered collections only.</strong> Use lists, <code>ArrayDeque</code> and JGraphT's insertion-ordered sets. Never iterate a <code>HashSet</code> or <code>HashMap</code> keyed on <code>Node</code>: nodes hash by identity, so the order changes every run.</li>
+    <li><strong>Single-threaded</strong> generation and ticks.</li>
+    <li><strong><code>StrictMath</code></strong> for <code>sin</code>, <code>cos</code> and <code>atan2</code> (decided 2026-10-26), so results don't depend on the CPU or JVM.</li>
+    <li><strong>Player commands apply only at tick boundaries</strong>, in queue order, so a replay gives the same result.</li>
+    <li><strong>A change that alters the output</strong> for the same code bumps <code>CityConfig.VERSION</code> and re-pins the golden test in the same commit.</li>
+  </ol>
+</section>
+
+<section class="s" id="server">
+  <p class="label s-tag">Multiplayer server</p>
+  <h3>The server holds the city in memory and has the final say</h3>
+  <p>Ragga is multiplayer. The server is the single authority: players send commands, the server checks them and applies them at the next tick, and everyone receives the result. Agreement comes from the server process, not from database writes, so there is <strong>no database write per tick</strong>.</p>
+  <div class="pipe">
+    <div class="box"><p class="label">Players</p><p>Send commands: buy a building, hire someone, take a loan.</p></div>
+    <span class="arrow" aria-hidden="true">→</span>
+    <div class="box"><p class="label">Command queue</p><p>Checked on arrival, applied in order at the next tick.</p></div>
+    <span class="arrow" aria-hidden="true">→</span>
+    <div class="box"><p class="label">Clock</p><p>One tick = one week, every N real seconds.</p></div>
+    <span class="arrow" aria-hidden="true">→</span>
+    <div class="box"><p class="label">City in memory</p><p>Plain Java objects; one tick is one method call over them.</p></div>
+    <span class="arrow" aria-hidden="true">→</span>
+    <div class="box"><p class="label">Updates</p><p>What changed is sent to each player (or just the part they're viewing).</p></div>
+  </div>
+  <p class="label soft">Stored in MySQL</p>
+  <div class="store-row">
+    <div class="box"><p class="label">Snapshot</p><p>The whole city every K ticks, and on save.</p></div>
+    <div class="box"><p class="label">Command log</p><p>Every accepted command since the last snapshot.</p></div>
+    <div class="box"><p class="label">Accounts</p><p>Players and saves, as normal JPA rows.</p></div>
+  </div>
+  <div class="callout info">
+    <p class="label">Crash recovery</p>
+    <p>Load the latest snapshot, then replay the logged commands. This gives back exactly the same city only because the simulation is deterministic (see the rules above).</p>
+  </div>
+</section>
+
+<section class="s" id="time">
+  <p class="label s-tag">Time and ticks</p>
+  <h3>One tick is one week, on a real-time clock</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Rule</th><th>Value</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td class="topic">Tick length</td><td class="num">1 week</td><td>Decided 2026-10-26.</td></tr>
+        <tr><td class="topic">Ticks per year</td><td class="num">52</td><td>Aging and yearly figures count in 52s.</td></tr>
+        <tr><td class="topic">Pacing</td><td class="num">every N s</td><td>A real-time clock for every player; N is still open.</td></tr>
+        <tr><td class="topic">Monthly costs</td><td><span class="chip warn">open</span></td><td>Rent, salaries and loans are monthly in real life. Either pay weekly amounts (yearly ÷ 52) or settle every 4th tick.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="s" id="economy">
+  <p class="label s-tag">Economy spike</p>
+  <h3>Close the money loop before building the map for it</h3>
+  <p>The old roadmap tested stability (step 7) before income, shops, companies and life events existed, and its money had nowhere to go: tax had no receiver and industry had no buyer. The spike fixes that first. It's plain Java with no map, no Spring and no database, and it tells generation what to produce (jobs and homes per lot).</p>
+  <figure class="figure">
+    <svg viewBox="0 0 760 380" role="img" aria-labelledby="money-title">
+      <title id="money-title">Money flows in the economy spike</title>
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head"/></marker>
+        <marker id="ah-in" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head in"/></marker>
+      </defs>
+      <rect class="d-box key" x="290" y="16" width="180" height="64" rx="10"/>
+      <text class="d-title" x="380" y="44" text-anchor="middle">Treasury</text>
+      <text class="d-sub" x="380" y="63" text-anchor="middle">collects tax, pays public jobs</text>
+
+      <rect class="d-box" x="30" y="158" width="210" height="64" rx="10"/>
+      <text class="d-title" x="135" y="186" text-anchor="middle">Households</text>
+      <text class="d-sub" x="135" y="205" text-anchor="middle">earn, pay, spend, save</text>
+
+      <rect class="d-box" x="520" y="158" width="210" height="64" rx="10"/>
+      <text class="d-title" x="625" y="186" text-anchor="middle">Companies</text>
+      <text class="d-sub" x="625" y="205" text-anchor="middle">shops · industry · farms</text>
+
+      <rect class="d-box" x="520" y="300" width="210" height="64" rx="10"/>
+      <text class="d-title" x="625" y="328" text-anchor="middle">Outside market</text>
+      <text class="d-sub" x="625" y="347" text-anchor="middle">buys at a set price</text>
+
+      <path class="d-flow" d="M520,176 L244,176" marker-end="url(#ah)"/>
+      <text class="d-lbl" x="382" y="168" text-anchor="middle">wages</text>
+      <path class="d-flow" d="M240,204 L516,204" marker-end="url(#ah)"/>
+      <text class="d-lbl" x="382" y="224" text-anchor="middle">spending at shops</text>
+
+      <path class="d-flow" d="M200,158 L300,84" marker-end="url(#ah)"/>
+      <text class="d-lbl" x="268" y="134">tax</text>
+      <path class="d-flow" d="M290,40 C190,40 110,80 110,154" marker-end="url(#ah)"/>
+      <text class="d-lbl" x="205" y="30" text-anchor="middle">public-job wages</text>
+
+      <path class="d-flow" d="M600,222 L600,296" marker-end="url(#ah)"/>
+      <text class="d-lbl" x="590" y="264" text-anchor="end">goods</text>
+      <path class="d-flow in" d="M650,300 L650,226" marker-end="url(#ah-in)"/>
+      <text class="d-lbl in" x="660" y="264">export income</text>
+
+      <path class="d-flow open" d="M540,300 C470,330 300,330 240,222" marker-end="url(#ah)"/>
+      <text class="d-lbl" x="390" y="342" text-anchor="middle">imports? (open)</text>
+    </svg>
+    <figcaption>Solid lines are decided; dashed lines are open. Green marks money entering the city.</figcaption>
+  </figure>
+  <div class="tbl wide-tbl">
+    <table>
+      <thead><tr><th>From</th><th>To</th><th>Flow</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="topic">Companies</td><td>Households</td><td>Wages</td><td><span class="chip ok">decided</span></td></tr>
+        <tr><td class="topic">Households</td><td>Treasury</td><td>Tax on income</td><td><span class="chip ok">decided</span></td></tr>
+        <tr><td class="topic">Treasury</td><td>Households</td><td>Wages for public jobs and services</td><td><span class="chip ok">decided</span></td></tr>
+        <tr><td class="topic">Households</td><td>Shops</td><td>Spending</td><td><span class="chip ok">decided</span></td></tr>
+        <tr><td class="topic">Industry, farms</td><td>Outside market</td><td>Goods, sold at a set price</td><td><span class="chip ok">decided</span></td></tr>
+        <tr><td class="topic">Outside market</td><td>Industry, farms</td><td>Payment: the city's money inflow</td><td><span class="chip ok">decided</span></td></tr>
+        <tr><td class="topic">Households</td><td>Home owners</td><td>Rent (who owns homes in the spike?)</td><td><span class="chip warn">open</span></td></tr>
+        <tr><td class="topic">Shops</td><td>Outside market</td><td>Buying stock: the outflow that balances exports</td><td><span class="chip warn">open</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout info">
+    <p class="label">Starting point for the weekly order (from design-2.0)</p>
+    <p>Salary → tax → debt → rent → shops → savings. Adjust it for weekly ticks once the monthly-costs question is settled.</p>
+  </div>
+  <div class="callout warn">
+    <p class="label">The spike passes when</p>
+    <ul>
+      <li><strong>Money balances every tick:</strong> the city's total changes only by export income minus imports.</li>
+      <li><strong>Employment stays in a band</strong> over 1,000 ticks (about 19 years); the band is still to set.</li>
+      <li><strong>The same seed gives the same result</strong>, run twice.</li>
+      <li>All of it in a plain JUnit test: no Spring, no database, no map.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= PLAN ================= -->
+<div class="part-head">
+  <p class="eyebrow">Plan</p>
+  <h2>Order of work</h2>
+</div>
+
+<section class="s" id="roadmap">
+  <p class="label s-tag">Roadmap</p>
+  <h3>Seven steps; checks come after what they check</h3>
+  <ol class="steps">
+    <li class="done"><div class="step-body">
+      <h4>Generation <span class="chip ok">done</span></h4>
+      <p>Node growth and streets. Seed 67 → 326 nodes / 549 streets.</p>
+    </div></li>
+    <li class="now"><div class="step-body">
+      <h4>Safety net and quadtree <span class="chip info">now</span></h4>
+      <ul>
+        <li><strong>Secure the work:</strong> archive the old repo's uncommitted tree on a branch and push it; make the staged quadtree files match the working tree.</li>
+        <li><strong>Safety net:</strong> generation in a plain class that takes a <code>CityConfig</code>; switch to <code>StrictMath</code>; a JUnit golden test (counts plus an order-independent street fingerprint) and a brute-force invariants check.</li>
+        <li><strong>Quadtree:</strong> builder written by hand against a brute-force equivalence test, then wired into the three scans. Two evenings at most.</li>
+      </ul>
+      <p class="done-when"><b>Done when</b> <code>./mvnw test</code> passes with MySQL stopped, and the golden test is unchanged after the quadtree is wired in.</p>
+    </div></li>
+    <li class="next"><div class="step-body">
+      <h4>Economy spike <span class="chip warn">next</span></h4>
+      <p>Plain-Java money loop with treasury and outside market (see <a href="#economy">Economy spike</a>).</p>
+      <p class="done-when"><b>Done when</b> 1,000 weekly ticks balance money, keep employment in its band, and repeat exactly.</p>
+    </div></li>
+    <li><div class="step-body">
+      <h4>Lots and zoning</h4>
+      <p>Blocks from the graph's faces; zone mix sized by what the spike needs. Watch for streets passing close to unrelated intersections, which makes sliver blocks.</p>
+    </div></li>
+    <li><div class="step-body">
+      <h4>People, jobs and the server tick loop</h4>
+      <p>Households and inhabitants on lots, job matching, and the real tick loop: server memory, command queue, clock, snapshots and command log.</p>
+    </div></li>
+    <li><div class="step-body">
+      <h4>Minimal life events</h4>
+      <p>Hiring, layoffs, and deaths replaced by births. Nothing more until this is stable.</p>
+    </div></li>
+    <li><div class="step-body">
+      <h4>Players</h4>
+      <p>The multiplayer client; player actions as commands (buy buildings, hire, take loans).</p>
+    </div></li>
+  </ol>
+  <div class="callout info">
+    <p class="label">Deferred</p>
+    <p>Counter-offers on job changes, homelessness penalties, personal bankruptcy, the 3D engine choice, and portfolio extras (CI badge, JMH benchmarks, a generic quadtree library).</p>
+  </div>
+</section>
+
+<section class="s" id="open">
+  <p class="label s-tag">Open questions</p>
+  <h3>Still to decide, roughly in the order they'll come up</h3>
+  <div class="tbl wide-tbl">
+    <table>
+      <thead><tr><th>Question</th><th>Needed by</th><th>Options or notes</th></tr></thead>
+      <tbody>
+        <tr><td class="topic">Monthly costs with weekly ticks</td><td><span class="chip warn">step 3</span></td><td>Pay weekly amounts (yearly ÷ 52), or settle every 4th tick.</td></tr>
+        <tr><td class="topic">Who owns homes in the spike?</td><td><span class="chip warn">step 3</span></td><td>Decides who receives rent. The old design had owner-occupiers, landlords and companies.</td></tr>
+        <tr><td class="topic">What do shops buy, and from whom?</td><td><span class="chip warn">step 3</span></td><td>Imports from the outside market would be the outflow that balances exports.</td></tr>
+        <tr><td class="topic">Employment band</td><td><span class="chip warn">step 3</span></td><td>What range counts as “steady” for the spike test.</td></tr>
+        <tr><td class="topic">Street clearance</td><td><span class="chip mute">step 4</span></td><td>A minimum distance between a street and intersections it doesn't connect to.</td></tr>
+        <tr><td class="topic">How streets are saved</td><td><span class="chip mute">step 5</span></td><td>Edges are JGraphT <code>DefaultEdge</code>s with no entity, and <code>Node</code> uses identity. Possibly save nodes by index and streets as index pairs, or just the city code.</td></tr>
+        <tr><td class="topic">N and K</td><td><span class="chip mute">step 5</span></td><td>Real seconds per tick; ticks between snapshots.</td></tr>
+        <tr><td class="topic">Client and 3D engine</td><td><span class="chip mute">step 7</span></td><td>Godot client with the Java server, or jMonkeyEngine (notes Q6/Q7). Keep Spring's web layer for the client API either way.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ================= REFERENCE ================= -->
+<div class="part-head">
+  <p class="eyebrow">Reference</p>
+  <h2>Decisions and conventions</h2>
+</div>
+
+<section class="s" id="decisions">
+  <p class="label s-tag">Decision log</p>
+  <h3>What's settled, and why</h3>
+  <div class="tbl wide-tbl">
+    <table>
+      <thead><tr><th>Date</th><th>Decision</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td class="date">2026-07-30</td><td>Graph-based generation with JGraphT replaces the grid</td><td>A better generation model than the flat grid allowed.</td></tr>
+        <tr><td class="date">2026-07-30</td><td><code>Node</code> is a class, not a record</td><td>Reference equality, so two nodes at the same spot never silently merge.</td></tr>
+        <tr><td class="date">2026-10-12</td><td>One shared seeded <code>Random</code>, fixed draw order</td><td>Reproducible cities (notes Q2).</td></tr>
+        <tr><td class="date">2026-10-12</td><td>City codes</td><td>Settings + seed shared as one short code (Q3).</td></tr>
+        <tr><td class="date">2026-10-19</td><td>Quadtree: builder frozen into sealed records, kept in memory</td><td>Rebuilding takes milliseconds; saving it adds nothing (Q12, Q19–Q21).</td></tr>
+        <tr><td class="date">2026-10-26</td><td>Top goal: build the simulation</td><td>Max's call after the council review.</td></tr>
+        <tr><td class="date">2026-10-26</td><td>Economy spike before lots and zoning</td><td>Checks must come after what they check, and the money loop decides what the map needs.</td></tr>
+        <tr><td class="date">2026-10-26</td><td><code>StrictMath</code> now</td><td>City codes must give the same city on every machine.</td></tr>
+        <tr><td class="date">2026-10-26</td><td>Design doc is this HTML page</td><td>Replaces <code>design-2.0.md</code> for the rewrite.</td></tr>
+        <tr><td class="date">2026-10-26</td><td>Multiplayer: server memory + command queue; snapshots and command log in MySQL</td><td>Sync comes from the server, not database writes; replay needs determinism.</td></tr>
+        <tr><td class="date">2026-10-26</td><td>Weekly ticks on a real-time clock</td><td>Max's call.</td></tr>
+        <tr><td class="date">2026-10-26</td><td>Tax → treasury; outside market buys industry and farm output</td><td>Gives the money loop a receiver and an inflow.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="s" id="out">
+  <p class="label s-tag">Out of scope</p>
+  <h3>Not being built, and approaches already tried</h3>
+  <div class="dual">
+    <div class="panel">
+      <p class="label">Not in Ragga</p>
+      <ul>
+        <li><strong>Crime</strong></li>
+        <li><strong>Health and illness:</strong> death comes from an age-based probability table instead</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <p class="label">Tried and dropped</p>
+      <ul>
+        <li>Wave function collapse generation (Jan 2026)</li>
+        <li>Voronoi generation (Jan 2026)</li>
+        <li>The flat grid with density cores (dropped 2026-07-30)</li>
+        <li>Separate NPC and player building classes</li>
+        <li>A database write per tick</li>
+      </ul>
+    </div>
+  </div>
+  <p class="soft">The old “no diagonal roads” rule belonged to the grid and doesn't apply to the graph, where streets run at any angle.</p>
+</section>
+
+<section class="s" id="carried">
+  <p class="label s-tag">Carried over</p>
+  <h3>Ideas from the grid model to revisit when their step comes</h3>
+  <div class="tbl wide-tbl">
+    <table>
+      <thead><tr><th>Idea</th><th>From</th><th>Revisit at</th></tr></thead>
+      <tbody>
+        <tr><td class="topic">Ownership as a relationship</td><td><code>Building.owner → Owner</code>, with households and companies as owners; a player takeover is just a new owner</td><td><span class="chip mute">step 5</span></td></tr>
+        <tr><td class="topic">Market-cleared housing</td><td>Bidding war, second-price rule; calibrated numbers in the old <code>ECONOMY.md</code></td><td><span class="chip mute">step 5</span></td></tr>
+        <tr><td class="topic">Golden-seed tests</td><td>Lock one seed's counts; update them in the same commit as a deliberate change</td><td><span class="chip info">step 2</span></td></tr>
+        <tr><td class="topic">Life-event list</td><td>Layoffs, job changes with counter-offers, homelessness, bankruptcy, aging and death</td><td><span class="chip mute">step 6</span></td></tr>
+        <tr><td class="topic">Job matching</td><td>Weighted by distance, education match and salary; overqualified people may fill lower jobs</td><td><span class="chip mute">step 5</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="s" id="rules">
+  <p class="label s-tag">Working rules</p>
+  <h3>How work on Ragga happens</h3>
+  <ol class="plain">
+    <li><strong>Max writes the code.</strong> AI sessions advise and explain, and write reference code only when asked.</li>
+    <li><strong>Any change in <code>src/</code> starts with a written plan.</strong></li>
+    <li><strong>Explanations and reports are HTML pages</strong>, not markdown.</li>
+    <li><strong>Before every commit:</strong> check <code>git status</code> and <code>git diff --cached</code>, and run <code>./mvnw test</code>.</li>
+    <li><strong>The golden test stays green.</strong> A deliberate change re-pins it and bumps <code>CityConfig.VERSION</code> in the same commit.</li>
+    <li><strong>Keep this page current:</strong> update Current state and the roadmap chips when a step finishes.</li>
+  </ol>
+</section>
+
+<section class="s" id="glossary">
+  <p class="label s-tag">Glossary</p>
+  <h3>Words used in the code and this doc</h3>
+  <dl class="gloss">
+    <dt>Node</dt><dd>An intersection in the street graph.</dd>
+    <dt>Edge, street</dt><dd>A connection between two nodes.</dd>
+    <dt>Starter</dt><dd>A node the generator starts from: a position plus a split number. The code also calls these “seeds”, which is easy to confuse with the random seed.</dd>
+    <dt>Split number</dt><dd>How many more generations a node branches. The whole part always happens; the fraction is the chance of one more. 5.5 → 4.5 → … → 0.5, which branches half the time.</dd>
+    <dt>Random seed</dt><dd>The number that makes the random choices repeatable (67 in the golden test).</dd>
+    <dt>City code</dt><dd>Every setting, the starters and the random seed packed into one short shareable text.</dd>
+    <dt>Golden test</dt><dd>A test that locks one seed's output (326 / 549), so accidental changes show up.</dd>
+    <dt>Quadtree</dt><dd>A spatial index that splits the map into squares, so nearby nodes are found without checking all of them.</dd>
+    <dt>Tick</dt><dd>One simulation step: one week.</dd>
+    <dt>Treasury</dt><dd>The city's account: receives tax, pays public jobs and services.</dd>
+    <dt>Outside market</dt><dd>A buyer beyond the city that pays a set price for industry and farm output.</dd>
+    <dt>Snapshot</dt><dd>The whole city's state, saved every K ticks.</dd>
+    <dt>Command log</dt><dd>Every accepted player command since the last snapshot, used for crash recovery.</dd>
+    <dt>Spike</dt><dd>A small, throwaway-friendly prototype that answers one question: does the money loop hold?</dd>
+  </dl>
+</section>
+
+</main>
+</div>
+
+<script>
+// marks the index entry of the section in view
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  if (!('IntersectionObserver' in window)) return;
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      links.forEach(function (a) { a.removeAttribute('aria-current'); });
+      var a = byId[e.target.id];
+      if (a) {
+        a.setAttribute('aria-current', 'true');
+        var d = a.closest('details');
+        if (d && !d.open) d.open = true;
+      }
+    });
+  }, { rootMargin: '-15% 0px -75% 0px' });
+  Object.keys(byId).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) io.observe(el);
+  });
+})();
+</script>
+</body>
+</html>

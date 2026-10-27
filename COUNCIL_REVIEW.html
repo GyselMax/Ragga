@@ -1,0 +1,1445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ragga Council Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Literata:ital,wght@0,400;0,600;1,400&family=Schibsted+Grotesk:wght@500;700;800&display=swap">
+<style>
+/* same visual language as docs/java-notes.html: folders on the left, one reading column on the right */
+:root {
+  --paper: #f3f5f4;
+  --sheet: #ffffff;
+  --ink: #1a2228;
+  --ink-soft: #4d5a63;
+  --rule: #d3dbdd;
+  --accent: #1c5a85;
+  --accent-soft: #e2ecf3;
+  --warn: #8f5310;
+  --warn-soft: #f6ebdb;
+  --ok: #24683a;
+  --ok-soft: #dcefe2;
+  --bad: #9a2c2c;
+  --bad-soft: #f6dede;
+  --code-bg: #eceff0;
+
+  /* ranking heat, 1 = best */
+  --h1: #1c5a85; --h1-ink: #ffffff;
+  --h2: #5f8fb0; --h2-ink: #ffffff;
+  --h3: #a9c4d8; --h3-ink: #1a2228;
+  --h4: #d6e3ec; --h4-ink: #1a2228;
+  --h5: #eef3f6; --h5-ink: #4d5a63;
+
+  --f-display: "Schibsted Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Literata", Georgia, "Times New Roman", serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #12171b; --sheet: #182027; --ink: #dde4e8; --ink-soft: #9cabb5; --rule: #2c3841;
+    --accent: #86bbe0; --accent-soft: #1c3042; --warn: #e0aa5c; --warn-soft: #33281a; --code-bg: #1b232a;
+    --ok: #8fd0a2; --ok-soft: #1f3d2a; --bad: #f0a0a0; --bad-soft: #45242a;
+    --h1: #86bbe0; --h1-ink: #12171b; --h2: #5c8db0; --h2-ink: #12171b; --h3: #3a6584; --h3-ink: #dde4e8;
+    --h4: #27445a; --h4-ink: #dde4e8; --h5: #1d2e3b; --h5-ink: #9cabb5;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #12171b; --sheet: #182027; --ink: #dde4e8; --ink-soft: #9cabb5; --rule: #2c3841;
+  --accent: #86bbe0; --accent-soft: #1c3042; --warn: #e0aa5c; --warn-soft: #33281a; --code-bg: #1b232a;
+  --ok: #8fd0a2; --ok-soft: #1f3d2a; --bad: #f0a0a0; --bad-soft: #45242a;
+  --h1: #86bbe0; --h1-ink: #12171b; --h2: #5c8db0; --h2-ink: #12171b; --h3: #3a6584; --h3-ink: #dde4e8;
+  --h4: #27445a; --h4-ink: #dde4e8; --h5: #1d2e3b; --h5-ink: #9cabb5;
+  color-scheme: dark;
+}
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 17px;
+  line-height: 1.62;
+}
+a { color: var(--accent); }
+code {
+  font-family: var(--f-mono);
+  font-size: .84em;
+  background: var(--code-bg);
+  padding: .08em .35em;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+strong { font-weight: 600; }
+
+/* PAGE FRAME */
+.page {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding-inline: 24px;
+  padding-block: 48px 96px;
+  display: grid;
+  grid-template-columns: 16.5rem minmax(0, 1fr);
+  gap: 2.5rem 3.5rem;
+}
+@media (max-width: 880px) {
+  .page { grid-template-columns: minmax(0, 1fr); padding-inline: 16px; padding-block: 28px 64px; gap: 2rem; }
+}
+.eyebrow, .label {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  margin: 0;
+}
+
+/* MASTHEAD */
+.masthead {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.5rem 2.5rem;
+  align-items: end;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--rule);
+}
+.masthead-text { display: flex; flex-direction: column; gap: .7rem; min-width: 0; }
+.masthead .eyebrow { color: var(--accent); }
+h1 {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-size: clamp(2.2rem, 5.5vw, 3.5rem);
+  line-height: 1.04;
+  letter-spacing: -.025em;
+  margin: 0;
+  text-wrap: balance;
+}
+.lede { font-size: 1.12rem; color: var(--ink-soft); max-width: 60ch; margin: 0; }
+.meta { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-soft); margin: 0; }
+.badge {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  min-width: 15rem;
+}
+.badge .label { color: var(--ink-soft); }
+.badge-word { font-family: var(--f-display); font-weight: 800; font-size: 2rem; line-height: 1.1; color: var(--warn); }
+.meter { height: .5rem; background: var(--code-bg); border-radius: 99px; overflow: hidden; }
+.meter span { display: block; height: 100%; background: var(--warn); border-radius: 99px; }
+.badge-note { font-family: var(--f-mono); font-size: 12px; color: var(--ink-soft); margin: 0; }
+@media (max-width: 880px) { .masthead { grid-template-columns: minmax(0, 1fr); } .badge { min-width: 0; } }
+
+/* INDEX, in folders */
+.toc {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+.toc details > summary {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 14px;
+}
+.toc details > summary::-webkit-details-marker { display: none; }
+.toc details > summary::before { content: "▸"; width: .8rem; font-size: 11px; color: var(--ink-soft); transition: transform .15s; }
+.toc details[open] > summary::before { transform: rotate(90deg); }
+.toc details > summary:hover { background: var(--accent-soft); }
+.toc details > summary:focus-visible, .toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toc-n { margin-left: auto; font-family: var(--f-mono); font-size: 11.5px; font-weight: 600; color: var(--ink-soft); }
+.toc ol { list-style: none; margin: 0; padding: 0 0 .35rem .55rem; display: flex; flex-direction: column; gap: 2px; }
+.toc a {
+  display: block;
+  padding: .42rem .6rem;
+  border-radius: 6px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-family: var(--f-display);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.toc a:hover, .toc a[aria-current="true"] { background: var(--accent-soft); color: var(--ink); }
+@media (max-width: 880px) { .toc { position: static; max-height: none; } }
+@media (prefers-reduced-motion: reduce) { .toc details > summary::before { transition: none; } }
+
+/* SECTIONS */
+main { min-width: 0; display: flex; flex-direction: column; gap: 4rem; container-type: inline-size; }
+.part-head { display: flex; flex-direction: column; gap: .4rem; padding-top: 1rem; border-top: 3px solid var(--ink); }
+.part-head .eyebrow { color: var(--ink-soft); }
+.part-head h2 { font-family: var(--f-display); font-weight: 800; font-size: clamp(1.7rem, 3.6vw, 2.4rem); line-height: 1.1; margin: 0; letter-spacing: -.015em; }
+.part-head p { margin: 0; color: var(--ink-soft); max-width: 64ch; }
+section.s { display: flex; flex-direction: column; gap: 1.15rem; scroll-margin-top: 24px; min-width: 0; }
+section.s > * { margin: 0; }
+section.s + section.s { padding-top: 3.2rem; border-top: 1px solid var(--rule); }
+.s-tag { color: var(--accent); }
+section.s h3 {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  line-height: 1.17;
+  letter-spacing: -.012em;
+  max-width: 32ch;
+  text-wrap: balance;
+}
+section.s p, section.s li { max-width: 70ch; }
+.soft { color: var(--ink-soft); }
+
+/* CALLOUTS */
+.callout { border-radius: 8px; padding: .95rem 1.15rem; display: flex; flex-direction: column; gap: .35rem; max-width: 76ch; }
+.callout > * { margin: 0; }
+.callout.warn { background: var(--warn-soft); }
+.callout.warn .label { color: var(--warn); }
+.callout.info { background: var(--accent-soft); }
+.callout.info .label { color: var(--accent); }
+
+/* TWO PANELS SIDE BY SIDE */
+.dual { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+@container (max-width: 46rem) { .dual { grid-template-columns: minmax(0, 1fr); } }
+.panel {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 1.1rem 1.2rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: .7rem;
+  min-width: 0;
+}
+.panel > * { margin: 0; }
+.panel .label { color: var(--ink-soft); }
+.panel h4 { font-family: var(--f-display); font-size: 1.15rem; font-weight: 700; line-height: 1.25; }
+.panel ul { padding-left: 1.1rem; display: flex; flex-direction: column; gap: .25rem; font-size: .96rem; }
+.panel.old { border-top: 4px solid var(--ink-soft); }
+.panel.new { border-top: 4px solid var(--accent); }
+
+/* TABLES */
+.tbl { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; line-height: 1.5; }
+th, td { text-align: left; padding: .6rem .9rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: var(--paper);
+  white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: 0; }
+td.topic { font-family: var(--f-display); font-weight: 700; font-size: .95rem; min-width: 9rem; }
+.wide-tbl table { min-width: 44rem; }
+
+/* CHIPS */
+.chip {
+  display: inline-block;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: .18em .6em;
+  border-radius: 99px;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.info { background: var(--accent-soft); color: var(--accent); }
+.chip.mute { background: var(--code-bg); color: var(--ink-soft); }
+.who { font-family: var(--f-display); font-weight: 600; font-size: 13px; color: var(--accent); white-space: nowrap; }
+
+/* ROADMAP STRIP */
+.strip-wrap { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: 1rem; }
+.strip-row { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .3rem; align-items: stretch; }
+.strip-row .row-label { grid-column: 1 / -1; font-family: var(--f-display); font-weight: 700; font-size: 13px; }
+@container (max-width: 34rem) { .strip-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.step {
+  border-radius: 6px;
+  padding: .4rem .55rem;
+  font-family: var(--f-display);
+  font-size: 12.5px;
+  line-height: 1.25;
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+  min-height: 3rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.step b { font-family: var(--f-mono); font-size: 12px; }
+.step.done { background: var(--ok-soft); color: var(--ok); }
+.step.risk { background: var(--warn-soft); color: var(--warn); }
+.step.wip { background: var(--accent-soft); color: var(--accent); }
+.step.none { background: var(--code-bg); color: var(--ink-soft); }
+.legend { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: .35rem 1.1rem; font-family: var(--f-display); font-size: 13px; color: var(--ink-soft); }
+.legend li { display: flex; align-items: center; gap: .4rem; }
+.sw { width: .85rem; height: .85rem; border-radius: 3px; flex: none; }
+
+/* AGREEMENT MATRIX */
+.matrix td.dot { text-align: center; font-size: 1.15rem; line-height: 1.2; width: 4.6rem; }
+.matrix th.c { text-align: center; }
+.d-yes { color: var(--accent); }
+.d-part { color: var(--accent); opacity: .55; }
+.d-no { color: var(--rule); }
+.count { font-family: var(--f-mono); font-weight: 600; font-size: 13px; color: var(--ink-soft); white-space: nowrap; }
+
+/* RANK HEATMAP */
+.heat td.r { text-align: center; font-family: var(--f-mono); font-weight: 600; width: 3.4rem; }
+.r1 { background: var(--h1); color: var(--h1-ink); }
+.r2 { background: var(--h2); color: var(--h2-ink); }
+.r3 { background: var(--h3); color: var(--h3-ink); }
+.r4 { background: var(--h4); color: var(--h4-ink); }
+.r5 { background: var(--h5); color: var(--h5-ink); }
+.bar { display: flex; align-items: center; gap: .6rem; min-width: 10rem; }
+.bar span.fill { display: block; height: .7rem; border-radius: 99px; background: var(--accent); }
+.bar .n { font-family: var(--f-mono); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.lbl { font-family: var(--f-mono); font-weight: 600; background: var(--accent-soft); color: var(--accent); border-radius: 4px; padding: 0 .4em; margin-right: .4rem; }
+
+/* VERDICT SCALE */
+.scale { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem; }
+.scale div {
+  border-radius: 8px;
+  padding: .8rem .9rem;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-align: center;
+  background: var(--code-bg);
+  color: var(--ink-soft);
+  border: 2px solid transparent;
+}
+.scale div small { display: block; font-weight: 500; font-size: 12.5px; margin-top: .15rem; }
+.scale div.pick { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); }
+.flip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+@container (max-width: 46rem) { .flip { grid-template-columns: minmax(0, 1fr); } }
+
+/* NUMBERED STEPS (real sequences only) */
+.steps { list-style: none; counter-reset: step; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1.1rem; max-width: 76ch; }
+.steps > li { counter-increment: step; display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: .8rem; }
+.steps > li::before {
+  content: counter(step);
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--sheet);
+  font: 600 13px/1.85rem var(--f-mono);
+  text-align: center;
+}
+.steps .step-body { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
+.steps .step-body > * { margin: 0; }
+.steps h4 { font-family: var(--f-display); font-size: 1.08rem; font-weight: 700; line-height: 1.35; display: flex; flex-wrap: wrap; gap: .3rem .6rem; align-items: baseline; }
+.steps ul { padding-left: 1.1rem; display: flex; flex-direction: column; gap: .2rem; }
+.done-when { font-size: .95rem; color: var(--ink-soft); }
+.done-when b { font-family: var(--f-display); color: var(--ok); }
+
+/* PROCESS FLOW */
+.process { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; }
+.process div { background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: .8rem .9rem; display: flex; flex-direction: column; gap: .25rem; position: relative; }
+.process div > * { margin: 0; }
+.process .label { color: var(--accent); }
+.process p { font-size: .92rem; }
+@container (max-width: 46rem) { .process { grid-template-columns: minmax(0, 1fr); } }
+
+/* RENDERED MARKDOWN (advisor answers and reviews, kept exactly as written) */
+.md { display: flex; flex-direction: column; gap: .8rem; min-width: 0; }
+.md > * { margin: 0; }
+section.s .md h3, section.s .md h4, section.s .md h5 { font-family: var(--f-display); font-weight: 700; line-height: 1.3; margin: .7rem 0 0; max-width: none; letter-spacing: 0; }
+section.s .md h3 { font-size: 1.15rem; padding-bottom: .3rem; border-bottom: 1px solid var(--rule); }
+section.s .md h4 { font-size: 1.02rem; color: var(--accent); }
+section.s .md h5 { font-size: .95rem; }
+section.s .md h3:first-child { margin-top: 0; }
+.md ol, .md ul { padding-left: 1.3rem; display: flex; flex-direction: column; gap: .35rem; }
+.md li { max-width: 72ch; }
+.md li > ul, .md li > ol { margin-top: .3rem; }
+.md table { margin: .2rem 0; }
+.md-src { white-space: pre-wrap; font-family: var(--f-body); font-size: .95rem; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 1rem; margin: 0; }
+.headline { background: var(--accent-soft); border-radius: 8px; padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .35rem; max-width: 76ch; }
+.headline > * { margin: 0; }
+.headline p { font-size: 1.06rem; }
+.headline p.label { color: var(--accent); font-size: 12px; }
+.heat th.c { text-align: center; }
+.facts { display: flex; flex-wrap: wrap; gap: .4rem; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="masthead">
+  <div class="masthead-text">
+    <p class="eyebrow">Council review · 2026-10-25</p>
+    <h1>Ragga: progress and direction</h1>
+    <p class="lede">Five advisors answered on their own, five reviewers judged their answers blind, and the chair wrote the verdict. The verdict comes first; the evidence follows.</p>
+    <p class="meta">repos: ragga (rewrite) · RAGGA_OLD_GRID_GEN (old grid model) · review only, no project files changed</p>
+  </div>
+  <div class="badge" aria-label="Verdict: adjust, about 70 percent confidence">
+    <p class="label">Verdict</p>
+    <p class="badge-word">Adjust</p>
+    <div class="meter" aria-hidden="true"><span style="width:70%"></span></div>
+    <p class="badge-note">confidence ≈ 70%</p>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <details open>
+    <summary>Verdict <span class="toc-n">8</span></summary>
+    <ol>
+      <li><a href="#wait">Wait a minute</a></li>
+      <li><a href="#state">Actual vs documented</a></li>
+      <li><a href="#agree">Where they agree</a></li>
+      <li><a href="#clash">Where they clash</a></li>
+      <li><a href="#blind">Blind spots</a></li>
+      <li><a href="#verdict">The verdict</a></li>
+      <li><a href="#actions">Next three actions</a></li>
+      <li><a href="#roadmap">Roadmap change</a></li>
+    </ol>
+  </details>
+  <details open>
+    <summary>Peer review <span class="toc-n">8</span></summary>
+    <ol>
+      <li><a href="#ranking">Ranking</a></li>
+      <li><a href="#errors">Errors in the answers</a></li>
+      <li><a href="#missed">Missed by all five</a></li>
+      <li><a href="#r1">Reviewer 1</a></li>
+      <li><a href="#r2">Reviewer 2</a></li>
+      <li><a href="#r3">Reviewer 3</a></li>
+      <li><a href="#r4">Reviewer 4</a></li>
+      <li><a href="#r5">Reviewer 5</a></li>
+    </ol>
+  </details>
+  <details>
+    <summary>Advisors <span class="toc-n">5</span></summary>
+    <ol>
+      <li><a href="#a-con">Contrarian</a></li>
+      <li><a href="#a-ar">Assumption-Ripper</a></li>
+      <li><a href="#a-exp">Expansionist</a></li>
+      <li><a href="#a-out">Outsider</a></li>
+      <li><a href="#a-exe">Executor</a></li>
+    </ol>
+  </details>
+  <details>
+    <summary>Background <span class="toc-n">2</span></summary>
+    <ol>
+      <li><a href="#brief">The brief</a></li>
+      <li><a href="#method">How this ran</a></li>
+    </ol>
+  </details>
+</nav>
+
+<main>
+
+<!-- ============ VERDICT ============ -->
+<div class="part-head">
+  <p class="eyebrow">Phase 3</p>
+  <h2>Chairman verdict</h2>
+</div>
+
+<section class="s" id="wait">
+  <p class="label s-tag">Wait a minute</p>
+  <h3>The project this review was asked to judge isn't the one in this folder</h3>
+  <p>The request described “RaggaBackend” with a DESIGN.md, a README, a 12-step roadmap and entity and service packages. All of that lives in the grid-model repo you scrapped on 2026-07-30. The repo you're working in now is the graph rewrite. The council reviewed both, and the gap between them is the first finding.</p>
+  <div class="dual">
+    <div class="panel old">
+      <p class="label">What the review asked for</p>
+      <h4>RAGGA_OLD_GRID_GEN</h4>
+      <ul>
+        <li>15 commits, 2026-01-22 → 07-15</li>
+        <li>~9,200 lines + ~1,500 test lines</li>
+        <li><code>design-2.0.md</code> with the 12-step roadmap</li>
+        <li>JPA entities: households, inhabitants, buildings, companies</li>
+        <li>Working tree passes <strong>57/57</strong> tests</li>
+        <li>Committed HEAD <strong>does not compile</strong> (110 errors)</li>
+      </ul>
+    </div>
+    <div class="panel new">
+      <p class="label">What's actually here</p>
+      <h4>ragga (the rewrite)</h4>
+      <ul>
+        <li>2 commits, the last on 2026-10-14</li>
+        <li>~830 lines, 1 test (needs MySQL)</li>
+        <li>Graph generator: seed 67 → 326 nodes / 549 edges</li>
+        <li><code>CityConfig</code> city codes (nothing calls it yet)</li>
+        <li>Quadtree: records written, builder stubbed</li>
+        <li>No README, no design doc, no roadmap</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="state">
+  <p class="label s-tag">Actual vs documented</p>
+  <h3>What the docs say against what the code does</h3>
+  <p class="soft">Everything here was checked on 2026-10-25, by running code on copies or reading the git index.</p>
+  <div class="tbl wide-tbl">
+    <table>
+      <thead><tr><th>Topic</th><th>Documented</th><th>Actual</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="topic">Design and roadmap</td><td><code>design-2.0.md</code>, “the living doc”</td><td>Exists only in the scrapped repo. The rewrite has neither.</td><td><span class="chip bad">missing</span></td></tr>
+        <tr><td class="topic">Roadmap progress</td><td>Steps 1–2 done, 3–4 in progress</td><td>True for the old repo only. The rewrite is rebuilding step 2; steps 1 and 3–12 don't exist in it.</td><td><span class="chip warn">stale</span></td></tr>
+        <tr><td class="topic">Old economy and companies</td><td>Described as built (committed doc)</td><td>Built, and the tests pass, but never committed. HEAD <code>ae61f20</code> fails with 110 errors, and this disk has the only copy.</td><td><span class="chip bad">at risk</span></td></tr>
+        <tr><td class="topic">GitHub</td><td>The <code>origin</code> of both repos</td><td><code>master</code> now holds the rewrite. The old 15-commit history exists only in its local <code>.git</code>.</td><td><span class="chip warn">replaced</span></td></tr>
+        <tr><td class="topic">Seed 67</td><td>326 nodes / 549 edges</td><td>Confirmed in 0.28 s outside Spring. In the repo, the only check is booting Spring against MySQL and reading a <code>println</code>.</td><td><span class="chip ok">confirmed</span></td></tr>
+        <tr><td class="topic">Quadtree</td><td>“Design final” (Q21)</td><td>Builder methods are stubs. The <em>staged</em> copies are old placeholders that won't compile (<code>FrozenQuadtree</code>, <code>BranchDoesNotHave4ChildrenError</code>).</td><td><span class="chip bad">broken index</span></td></tr>
+        <tr><td class="topic"><code>CityConfig</code></td><td>“Makes and parses seeds”</td><td>Works, but nothing calls it. Its test sits outside the build.</td><td><span class="chip mute">unused</span></td></tr>
+        <tr><td class="topic">Old design doc details</td><td>“Lazy by default”, Known Gaps, “Visualizer (planned)”</td><td>No mapping is lazy, Known Gaps lists deleted classes, and the visualizer exists.</td><td><span class="chip warn">wrong in places</span></td></tr>
+        <tr><td class="topic">Excluded scope</td><td>Crime and health “explicitly out”</td><td>Not written anywhere. The only trace is “No illness system is required”.</td><td><span class="chip mute">unwritten</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="strip-wrap" aria-label="The 12-step roadmap, old repo against the rewrite">
+    <p class="label soft">The old 12-step roadmap, step by step</p>
+    <div class="strip-row">
+      <span class="row-label">Old repo</span>
+      <span class="step done"><b>1</b>JPA wiring</span>
+      <span class="step done"><b>2</b>Generation</span>
+      <span class="step risk"><b>3</b>Buildings</span>
+      <span class="step risk"><b>4</b>Households</span>
+      <span class="step none"><b>5</b>Inhabitants</span>
+      <span class="step none"><b>6</b>Jobs</span>
+      <span class="step none"><b>7</b>N turns</span>
+      <span class="step none"><b>8</b>Income</span>
+      <span class="step none"><b>9</b>Shops</span>
+      <span class="step none"><b>10</b>Companies</span>
+      <span class="step none"><b>11</b>Life events</span>
+      <span class="step none"><b>12</b>Players</span>
+    </div>
+    <div class="strip-row">
+      <span class="row-label">Rewrite</span>
+      <span class="step none"><b>1</b>—</span>
+      <span class="step wip"><b>2</b>Graph, in progress</span>
+      <span class="step none"><b>3</b>—</span>
+      <span class="step none"><b>4</b>—</span>
+      <span class="step none"><b>5</b>—</span>
+      <span class="step none"><b>6</b>—</span>
+      <span class="step none"><b>7</b>—</span>
+      <span class="step none"><b>8</b>—</span>
+      <span class="step none"><b>9</b>—</span>
+      <span class="step none"><b>10</b>—</span>
+      <span class="step none"><b>11</b>—</span>
+      <span class="step none"><b>12</b>—</span>
+    </div>
+    <ul class="legend">
+      <li><span class="sw" style="background:var(--ok-soft);border:1px solid var(--ok)"></span>done, committed</li>
+      <li><span class="sw" style="background:var(--warn-soft);border:1px solid var(--warn)"></span>built, but in uncommitted files</li>
+      <li><span class="sw" style="background:var(--accent-soft);border:1px solid var(--accent)"></span>in progress</li>
+      <li><span class="sw" style="background:var(--code-bg);border:1px solid var(--rule)"></span>not started</li>
+    </ul>
+  </div>
+</section>
+
+<section class="s" id="agree">
+  <p class="label s-tag">Where the advisors agree</p>
+  <h3>Six points, from near-unanimous to split</h3>
+  <div class="tbl wide-tbl">
+    <table class="matrix">
+      <thead><tr><th>Point</th><th class="c">Contr.</th><th class="c">Assump.</th><th class="c">Expan.</th><th class="c">Outsider</th><th class="c">Exec.</th><th>Count</th></tr></thead>
+      <tbody>
+        <tr><td>Generation must run and be tested without Spring or MySQL</td><td class="dot d-yes">●</td><td class="dot d-part">◐</td><td class="dot d-yes">●</td><td class="dot d-yes">●</td><td class="dot d-yes">●</td><td class="count">4 + ½</td></tr>
+        <tr><td>Your commit habit is the most urgent risk</td><td class="dot d-yes">●</td><td class="dot d-no">○</td><td class="dot d-yes">●</td><td class="dot d-yes">●</td><td class="dot d-yes">●</td><td class="count">4 of 5</td></tr>
+        <tr><td>Save the old working tree on a branch now</td><td class="dot d-yes">●</td><td class="dot d-no">○</td><td class="dot d-yes">●</td><td class="dot d-no">○</td><td class="dot d-yes">●</td><td class="count">3 of 5</td></tr>
+        <tr><td>More quadtree design is wasted (finish it or shelve it)</td><td class="dot d-yes">●</td><td class="dot d-yes">●</td><td class="dot d-no">○</td><td class="dot d-no">○</td><td class="dot d-yes">●</td><td class="count">3 of 5</td></tr>
+        <tr><td>The rewrite needs a README</td><td class="dot d-yes">●</td><td class="dot d-no">○</td><td class="dot d-yes">●</td><td class="dot d-yes">●</td><td class="dot d-no">○</td><td class="count">3 of 5</td></tr>
+        <tr><td>The rewrite needs a written roadmap or design note</td><td class="dot d-no">○</td><td class="dot d-yes">●</td><td class="dot d-no">○</td><td class="dot d-no">○</td><td class="dot d-yes">●</td><td class="count">2 of 5</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="legend">
+    <li><span class="d-yes">●</span> says so</li>
+    <li><span class="d-part">◐</span> partly: wants its own simulation test Spring-free</li>
+    <li><span class="d-no">○</span> doesn't raise it</li>
+  </ul>
+  <p>Every reviewer confirmed the first point in the code: <code>GraphGenerator</code> is a <code>CommandLineRunner</code> with <code>@Value</code> fields, and the only test needs MySQL. On the quadtree, Q11–Q23 are 13 questions, and the builder still has 0 method bodies, for a generator that runs in 0.3 s. Nobody said to keep designing it.</p>
+</section>
+
+<section class="s" id="clash">
+  <p class="label s-tag">Where they clash</p>
+  <h3>Five disagreements, kept as they are</h3>
+  <div class="tbl wide-tbl">
+    <table>
+      <thead><tr><th>Question</th><th>One side</th><th>Other side</th><th>Reviewers and chair</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="topic">What comes after the generator is safe?</td>
+          <td><span class="who">Executor</span><br>Stay in generation: finish the quadtree, wire it in, then lots.</td>
+          <td><span class="who">Contrarian · Assumption-Ripper</span><br>Stop and build a plain-Java closed-loop economy first. Tax goes nowhere, nothing buys industrial output, and the old “generation is done” (<code>5dc422f</code>) was undone by the first economy pass.</td>
+          <td>4 of 5 reviewers ranked the Executor first, for this week. 4 of 5 ranked the Contrarian first or second, and said its money-sink finding breaks the core rule “whatever the generator does”. <strong>Chair: both, in order.</strong></td>
+        </tr>
+        <tr>
+          <td class="topic">JPA for the running simulation?</td>
+          <td><span class="who">Old design</span><br>Every household, inhabitant and building is a JPA row. No advisor defended it.</td>
+          <td><span class="who">Assumption-Ripper alone</span><br>Run ticks on plain objects in memory and save snapshots.</td>
+          <td>The direction is plausible, but the cost numbers are guesses, and the IDENTITY point applies to inserts, not the updates it counted. Its “lazy by default is wrong” catch was confirmed by everyone who checked. <strong>Still open.</strong></td>
+        </tr>
+        <tr>
+          <td class="topic">How much portfolio polish?</td>
+          <td><span class="who">Expansionist</span><br>CI badge, jqwik, JMH, a generic quadtree, a <code>?code=</code> endpoint.</td>
+          <td><span class="who">Reviewers</span><br>Scope creep before lots exist.<br><span class="who">Outsider</span> drop the unused web dependencies; <span class="who">Reviewer 3</span> keep them for a Godot client.</td>
+          <td>Publishing what already exists is cheap and overdue. New tooling can wait.</td>
+        </tr>
+        <tr>
+          <td class="topic">Is your pace a problem?</td>
+          <td><span class="who">Contrarian</span><br>~830 lines in 87 days means more than a year before step 5.</td>
+          <td><span class="who">3 of 5 reviewers</span><br>The weakest argument: it compares hand-written code with AI-written code.</td>
+          <td><strong>Chair:</strong> the number means nothing. The signal under it holds: design notes are outrunning code.</td>
+        </tr>
+        <tr>
+          <td class="topic">Speed or learning?</td>
+          <td><span class="who">Executor · Contrarian</span><br>“Apply Q21” and finish the quadtree in one sitting.</td>
+          <td><span class="who">Reviewer 2</span><br>That makes the quadtree a second “mostly by claude” block, which undercuts the point of writing it yourself.</td>
+          <td>Write it yourself against a brute-force test, using Q21 to check your answers.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="s" id="blind">
+  <p class="label s-tag">Blind spots</p>
+  <h3>What none of the five advisors covered</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Found by</th><th>Blind spot</th></tr></thead>
+      <tbody>
+        <tr><td><span class="chip info">Reviewer 1</span></td><td><strong>Streets have no entity.</strong> Edges are JGraphT <code>DefaultEdge</code>s, so Q20's “save nodes and streets” has nowhere to store streets. Nobody has said how a saved graph is rebuilt into reference-equal <code>Node</code>s.</td></tr>
+        <tr><td><span class="chip info">Reviewer 5</span></td><td><strong>Determinism is fragile beyond <code>StrictMath</code>.</strong> <code>Node</code> hashes by identity, so any <code>HashSet</code> or <code>HashMap</code> iterated in later code changes the city from run to run and silently breaks city codes.</td></tr>
+        <tr><td><span class="chip info">Reviewer 4</span></td><td><strong>Nothing keeps a street away from intersections it doesn't connect to.</strong> Once lots are cut from the graph's faces, that produces sliver blocks.</td></tr>
+        <tr><td><span class="chip info">Reviewer 3</span></td><td><strong><code>spring.test.database.replace=none</code></strong> (<code>application.properties:8</code>) sends future <code>@DataJpaTest</code>s to MySQL even after H2 is added.</td></tr>
+        <tr><td><span class="chip warn">Chair</span></td><td><strong>Three goals pull against each other, and nothing ranks them:</strong> learn deeply (a hand-written rewrite, 23 Q&amp;As), be hireable (needs public tests, a README, commits), and build a Cities-like simulation (needs the economy loop and an engine). Each advisor optimised a different one. Only you can set the order.</td></tr>
+        <tr><td><span class="chip warn">Chair</span></td><td><strong>The basics aren't written down.</strong> The scope exclusions and the tick length (turns per year) are nowhere, and every life-event and finance number depends on the tick length.</td></tr>
+        <tr><td><span class="chip warn">Chair</span></td><td><strong>The old work hangs on one disk.</strong> GitHub's <code>master</code> was replaced, so the old history and the uncommitted economy exist only on this disk.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="s" id="verdict">
+  <p class="label s-tag">The verdict</p>
+  <h3>Adjust, with about 70% confidence</h3>
+  <div class="scale" role="img" aria-label="Scale: continue, adjust (chosen), rethink">
+    <div>Continue<small>as planned</small></div>
+    <div class="pick">Adjust<small>chosen · ≈70%</small></div>
+    <div>Rethink<small>start over</small></div>
+  </div>
+  <div class="flip">
+    <div class="panel">
+      <p class="label">Why not rethink</p>
+      <p>The graph generator works and is deterministic and fast. <code>CityConfig</code> and the sealed quadtree records are good Java.</p>
+    </div>
+    <div class="panel">
+      <p class="label">Why not continue as planned</p>
+      <p>There's no plan document, the work isn't safe, nothing is tested inside the build, and the next planned step (lots and zoning) repeats the old bet that generation can be finished before the economy exists.</p>
+    </div>
+    <div class="panel">
+      <p class="label">This would move me to rethink</p>
+      <p>Even with defined money sources and sinks, a small plain-Java economy can't keep its money balanced and employment steady. Then “the city sustains itself” is out of reach at this scope, and the project should narrow to a generator plus a market model.</p>
+    </div>
+    <div class="panel">
+      <p class="label">This would move me to continue</p>
+      <p>You decide that learning generation algorithms matters more than reaching the simulation. Then generation first is right, and the Executor's plan is the whole answer.</p>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="actions">
+  <p class="label s-tag">Next three actions</p>
+  <h3>What moves the project forward this week</h3>
+  <ol class="steps">
+    <li><div class="step-body">
+      <h4>Secure the work <span class="chip mute">under an hour</span></h4>
+      <ul>
+        <li><strong>Old repo:</strong> commit the untracked <code>economy</code>, <code>company</code>, <code>owner</code>, building and test files on a new branch (for example <code>archive/grid-economy</code>), and push only that branch.</li>
+        <li><strong>New repo:</strong> before any commit, make the staged quadtree files match the working tree (<code>git add</code> the real files). Ignore <code>graph.png</code> and <code>docs/.obsidian/</code>.</li>
+      </ul>
+      <p class="done-when"><b>Done when</b> the 57-test tree exists somewhere other than this disk, and <code>git diff --cached</code> shows your real quadtree.</p>
+    </div></li>
+    <li><div class="step-body">
+      <h4>Build the safety net <span class="chip mute">one evening</span></h4>
+      <ul>
+        <li>Move generation into a plain class that takes a <code>CityConfig</code> and returns the graph. <code>GraphGenerator</code> becomes a thin runner.</li>
+        <li>Decide on <code>StrictMath</code> first, since it can change the output (bump <code>CityConfig.VERSION</code> if it does).</li>
+        <li>Pin seed 67 in a JUnit test with no Spring: counts, an order-independent edge fingerprint, and a brute-force check of spacing, degree, angles and crossings. Move <code>CityConfigTest</code> into <code>src/test</code>.</li>
+      </ul>
+      <p class="done-when"><b>Done when</b> <code>./mvnw test</code> passes with MySQL stopped (remove or override <code>contextLoads</code>).</p>
+    </div></li>
+    <li><div class="step-body">
+      <h4>Finish the quadtree yourself <span class="chip mute">two evenings at most</span></h4>
+      <ul>
+        <li>Write the builder bodies by hand against a brute-force equivalence test. Use Q21 to check your answers, not as code to copy.</li>
+        <li>Wire the tree into the three scans. Then stop optimising.</li>
+      </ul>
+      <p class="done-when"><b>Done when</b> the golden test from action 2 is still green with the tree wired in.</p>
+    </div></li>
+  </ol>
+</section>
+
+<section class="s" id="roadmap">
+  <p class="label s-tag">Should DESIGN.md or the roadmap change?</p>
+  <h3>Yes: the rewrite needs its own design doc, in a new order</h3>
+  <p>Write a README and a design doc for the rewrite (for example <code>docs/DESIGN.md</code>). Keep <code>design-2.0.md</code> as the history of the grid model rather than fixing it. The new doc should carry over the philosophy and the confirmed decisions, write down the exclusions (crime, health, diagonal roads) and the open tick-length question, and rank the three goals. The roadmap should put validation after the things it validates:</p>
+  <ol class="steps">
+    <li><div class="step-body"><h4>Generation <span class="chip ok">done</span></h4></div></li>
+    <li><div class="step-body"><h4>Safety net and quadtree <span class="chip info">this week</span></h4><p class="soft">Actions 2–3 above.</p></div></li>
+    <li><div class="step-body"><h4>Plain-Java economy spike <span class="chip warn">next</span></h4><p class="soft">Defined money sources and sinks: tax goes to a treasury, and an outside buyer takes industrial and farm output. Includes a money-conservation test.</p></div></li>
+    <li><div class="step-body"><h4>Lots and zoning</h4><p class="soft">Sized by what the spike needs: jobs and homes per lot.</p></div></li>
+    <li><div class="step-body"><h4>People, jobs and the tick loop</h4><p class="soft">Kept in memory, saved as snapshots.</p></div></li>
+    <li><div class="step-body"><h4>Minimal life events</h4><p class="soft">Hiring, layoffs, and deaths replaced by births.</p></div></li>
+    <li><div class="step-body"><h4>Player entry</h4></div></li>
+  </ol>
+  <div class="callout info">
+    <p class="label">Deferred</p>
+    <p>Counter-offers, homelessness penalties, personal bankruptcy, and the 3D engine.</p>
+  </div>
+  <div class="callout warn">
+    <p class="label">Dissent kept</p>
+    <p>My call is the Executor's plan this week, then the economy spike before lots. The Executor would go from the quadtree straight to lots, and that's the better order if learning generation is your top goal.</p>
+  </div>
+</section>
+
+<!-- ============ PEER REVIEW ============ -->
+<div class="part-head">
+  <p class="eyebrow">Phase 2</p>
+  <h2>Blind peer review</h2>
+  <p>Role names were stripped and the order shuffled before any answer came back. Five fresh reviewers each judged all five answers and fact-checked one of them most closely.</p>
+</div>
+
+<section class="s" id="ranking">
+  <p class="label s-tag">Ranking</p>
+  <h3>The Executor came first, the Contrarian second</h3>
+  <div class="tbl wide-tbl">
+    <table class="heat">
+      <thead><tr><th>Answer</th><th class="c">R1</th><th class="c">R2</th><th class="c">R3</th><th class="c">R4</th><th class="c">R5</th><th>Points (max 25)</th></tr></thead>
+      <tbody>
+        <tr><td><span class="lbl">E</span>Executor</td><td class="r r1">1</td><td class="r r1">1</td><td class="r r2">2</td><td class="r r1">1</td><td class="r r1">1</td><td><div class="bar"><span class="fill" style="width:96%"></span><span class="n">24</span></div></td></tr>
+        <tr><td><span class="lbl">C</span>Contrarian</td><td class="r r2">2</td><td class="r r3">3</td><td class="r r1">1</td><td class="r r2">2</td><td class="r r2">2</td><td><div class="bar"><span class="fill" style="width:80%"></span><span class="n">20</span></div></td></tr>
+        <tr><td><span class="lbl">B</span>Expansionist</td><td class="r r3">3</td><td class="r r2">2</td><td class="r r3">3</td><td class="r r3">3</td><td class="r r4">4</td><td><div class="bar"><span class="fill" style="width:60%"></span><span class="n">15</span></div></td></tr>
+        <tr><td><span class="lbl">A</span>Outsider</td><td class="r r4">4</td><td class="r r4">4</td><td class="r r5">5</td><td class="r r5">5</td><td class="r r3">3</td><td><div class="bar"><span class="fill" style="width:36%"></span><span class="n">9</span></div></td></tr>
+        <tr><td><span class="lbl">D</span>Assumption-Ripper</td><td class="r r5">5</td><td class="r r5">5</td><td class="r r4">4</td><td class="r r4">4</td><td class="r r5">5</td><td><div class="bar"><span class="fill" style="width:28%"></span><span class="n">7</span></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="soft">The cells show each reviewer's rank (1 = most useful). Points add up 5 for a first place down to 1 for a fifth.</p>
+  <div class="dual">
+    <div class="panel">
+      <p class="label">Weakest argument · 3 votes (R1, R2, R3)</p>
+      <p><strong>C, Contrarian:</strong> “more than a year before step 5”. It measures pace in lines per day, comparing hand-written code with AI-written code.</p>
+    </div>
+    <div class="panel">
+      <p class="label">Weakest argument · 2 votes (R4, R5)</p>
+      <p><strong>D, Assumption-Ripper:</strong> that IDENTITY ids make per-tick <em>updates</em> slower. IDENTITY only blocks insert batching.</p>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="errors">
+  <p class="label s-tag">Errors in the answers</p>
+  <h3>Factual errors the reviewers found in the code claims</h3>
+  <div class="tbl wide-tbl">
+    <table>
+      <thead><tr><th>Answer</th><th>Claim</th><th>Correction</th></tr></thead>
+      <tbody>
+        <tr><td><span class="lbl">A</span>Outsider</td><td>GitHub has 10 Java files</td><td>The index holds 11; GitHub's HEAD has 5.</td></tr>
+        <tr><td><span class="lbl">A</span>Outsider</td><td>The old tests need MySQL <code>RaggaDB</code></td><td>Only <code>contextLoads</code> does. The JPA tests run on H2.</td></tr>
+        <tr><td><span class="lbl">B</span>Expansionist</td><td>About 20 <code>GenerationParams</code> fields</td><td>There are 40.</td></tr>
+        <tr><td><span class="lbl">B</span>Expansionist</td><td><code>git ls-tree HEAD</code> lists 12 files</td><td>It lists 7 entries; 12 is the recursive count.</td></tr>
+        <tr><td><span class="lbl">C</span>Contrarian</td><td>The quadtree has sat staged for 11 days</td><td>It was staged around 10-18/19. The 11 days is the time since the last commit.</td></tr>
+        <tr><td><span class="lbl">C</span>Contrarian</td><td>Generation restarted four times</td><td>Four attempts means three restarts.</td></tr>
+        <tr><td><span class="lbl">C</span>Contrarian</td><td>All ~9,200 lines date from 06-27 to 07-14</td><td>90 tracked lines are older.</td></tr>
+        <tr><td><span class="lbl">D</span>Assumption-Ripper</td><td>IDENTITY slows per-tick writes</td><td>It blocks insert batching only, not the updates it counted.</td></tr>
+        <tr><td><span class="lbl">E</span>Executor</td><td>Q16/Q22 gaps of 3–15% on the 0.3 s run</td><td>They were measured on an 11k-node city.</td></tr>
+        <tr><td><span class="lbl">E</span>Executor</td><td>The staged package mismatch breaks the build</td><td>That alone isn't a javac error. The two class-name mismatches are.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="s" id="missed">
+  <p class="label s-tag">Missed by all five</p>
+  <h3>Each reviewer's “nobody covered this”</h3>
+  <p class="soft">These feed the chair's blind spots above: streets have no entity (R1), the developer writes the code (R2), test DB replacement (R3), street clearance (R4), and identity hashing (R5). Each reviewer's full text is below.</p>
+</section>
+
+<section class="s" id="r1">
+  <p class="label s-tag">Reviewer 1 · checked answer A (Outsider) most closely</p>
+  <h3>Ranking: E, C, B, A, D</h3>
+<script type="text/markdown">
+### Critiques
+#### A
+A is strongest on what a newcomer or recruiter runs into: no README, `application.properties` comments carried over from the old repo (RaggaDB, `update`, `GridCell`), a local MySQL needed just to draw `graph.png`, and a staged quadtree that would commit a HEAD that doesn't compile. Connecting that staged/unstaged split to how `ae61f20` broke is the best commit-habit lesson in the set. It misses the second staged compile error (`BranchDoesNotHave4ChildrenError`), and "every comment describes the old project" is overstated, since `# BASICS` was rewritten. Its old-repo bullets are accurate but matter little now that the developer has moved on from that repo. Some counts are wrong (see errors).
+
+#### B
+B suits a job-hunter best. It lists what already exists (golden tests, the H2 round-trip test, the tuner, city codes) and shows how to make it visible. The `StrictMath` point is sharp: the developer's own notes require it for seeds shared between machines, the code uses `Math.cos/sin/atan2`, and sharing is what city codes are for. Checking invariants plus connectivity over 500 seeds beats a single 326/549 count. Making the quadtree a generic library and adding a `?code=` endpoint is polish that comes before any simulation exists, and "graph.png shows at least one dead end" is stated without evidence.
+
+#### C
+C has the most important design finding. Tax has no recipient, industry has no buyer, and step 7 (the stability test) comes before steps 8–11, the only steps that could make it fail. Two of its fixes are cheap and pay off a lot: the neutral `Parcel` record, and deciding where tax goes before writing any loop code. Its old-doc line citations all check out. It overreaches on velocity (see weakest argument) and gets the staging age wrong.
+
+#### D
+D repeats C's "build the tick loop first" and adds something useful: generation was declared done (`5dc422f`) before the economy forced placement changes, and lots and zoning without a jobs model make the same bet again. Its catch that `design-2.0.md:486` calls `@ManyToOne` "lazy by default" is correct: it defaults to eager, and no mapping sets LAZY. The headline cost estimate stacks guesses, and it applies the IDENTITY batching limit, which affects INSERTs, to per-tick UPDATEs. Those UPDATEs are still batched by `batch_size=100` and `order_updates`. No doc plans row-by-row persistence on every tick.
+
+#### E
+E is the most actionable answer: three tasks, each with files, a done-test (brute-force equivalence, an order-independent edge fingerprint, invariants) and correct line references. It is the only answer that catches both staged compile errors. Its caveat about the 2× crossing shortcut (it holds only while every street is no longer than the search radius) is sound. The hour estimates have nothing behind them, and because it puts the economy off entirely, C's structural risk goes unaddressed.
+
+### Ranking
+1. **E**: accurate and in order, and it fixes a real breakage this week.
+2. **C**: the one structural risk that can sink the core rule, with cheap mitigations.
+3. **B**: the best portfolio angle, plus the StrictMath and invariant-testing points.
+4. **A**: accurate hygiene and commit discipline, but narrower and overlapping B and E.
+5. **D**: good catches, but its headline rests on guesses and a batching mix-up.
+
+### Weakest argument
+C, Finding 6: "at that pace, rebuilding old steps 2–4 … takes more than a year". It divides lines by calendar days and compares old code written in about 18 days under an AI-QA workflow with a rewrite the developer types to learn. It also assumes the graph rewrite needs as many lines as the grid it replaces. Lines per day doesn't measure progress, and C itself calls this a guess, yet the "will stall" headline rests on it.
+
+### Factual errors about the code
+- **A, "the tracked files are 10 Java files (git ls-files)", said about the GitHub page.** `git ls-files | grep -c .java` gives 11 (10 main + 1 test). `git ls-tree -r origin/master | grep -c .java` gives 5. The 6 quadtree files are only staged.
+- **A, entry points "only described in docs inside package folders".** `design/design-2.0.md:325` covers GridVisualizer and `:345` covers `/tuner.html`.
+- **A, "The tests also need a MySQL database RaggaDB".** Only `RaggaBackendApplicationTests` does. `CityPersistenceRoundTripTest:51` and `BuildingTemplateSeederTest:21` set `replace = Replace.ANY` with H2 in test scope (old `pom.xml:71-77`). In Boot 4.0.1 the attribute's default is `NON_TEST` with `Skip.ON_DEFAULT_VALUE`, so `ANY` is applied, which the test's own Javadoc also says.
+- **C, "the quadtree has now sat staged for 11 days".** The staged blobs' loose objects are dated 2026-10-18/19 (one 10-24). Eleven days is the time since `f539899` (10-14).
+- **C, CityConfig "matches docs/examples … except for one comment".** That holds for HEAD (ignoring whitespace), but the working-tree file differs in 7 comments.
+- **B, "`git ls-tree HEAD` lists 12 files".** Without `-r` it prints 7 entries.
+
+### Confirmed claims
+- **A:** `HELP.md` at `.gitignore:1`; the bare pom `<description>`; webmvc, tomcat and springdoc with no controllers; Java 25 and Boot 4.1.0; line 4 says RaggaDB while the URL is `/Ragga` (old URL `RaggaDB`, user `cursist`); the `create-drop` value vs the `update` comment; `root`/`password`; the unused import; `GraphGenerator.java` lines `:50`, `:57`, `:98` and `:157`; three meanings of "seed" (`CityConfig.java:49`); `8a41f76` adds the 326 lines; staged `FrozenQuadtree` and the wrong package; `build()` returns null; vault path and claude.ai link in `docs/README.md`; 7.4 MB of tracked PNGs; no "Phase A"; `design-2.0.md` `:5`, `:58`, `:324` vs `:338`, `:489-490`; the committed `Building` imports `owner.Owner`, which `ae61f20` lacks.
+- **B:** 13 `GOLDEN_*` constants (seed 42, 400²); `sameSeedIsFullyDeterministic`; `violations()` returns `Map<String,Long>`; no H2 in the new pom; StrictMath at `java-notes.html:4052-4053`; the Math call lines; controller `:180`; the `HousingMarketService` Javadoc and imports.
+- **C:** roadmap `:364-368`; tax `:219`; only "municipal" at `:539`; plan `:50` and `:31-36`; the lognormal+Pareto income draw; `birthDate`; `:202` vs `:120-126`; commit gaps of 47/102/37/54 days; `1b1223b` removes 1,802 lines; 4,128 untracked lines; stubs at `QuadTreeBuilder.java:30-52`.
+- **D:** golden counts 1,321/725/431/208; households = capacity × 0.95; IDENTITY in `Inhabitant`, `Owner` and `Node`; 7 JOINED building entities; no LAZY anywhere; `Occupation.java:14-31`.
+- **E:** 9 `@Value` fields plus 2 constants; all its line references; the staged exception-name mismatch; Q11–Q23 dates; the regression test added in `f166213`.
+
+### Missed by all five
+There is no street entity. Edges are JGraphT `DefaultEdge`s with no JPA mapping, so the Q20 decision to persist "nodes and streets" has nothing to store streets in. With `Node` using reference equality and IDENTITY ids, nobody addressed how a saved graph is rebuilt when it is loaded back.
+</script>
+</section>
+
+<section class="s" id="r2">
+  <p class="label s-tag">Reviewer 2 · checked answer B (Expansionist) most closely</p>
+  <h3>Ranking: E, B, C, A, D</h3>
+<script type="text/markdown">
+### Critiques
+#### A
+A solid cold-reader audit. The copied `application.properties` (RAGGADB comment vs `/Ragga`, `update` comment vs `create-drop`, `GridCell`), the hardcoded credentials, the unused web/springdoc dependencies, the three meanings of "seed" and the non-compiling staged placeholders are all real. Making generation runnable without MySQL, with a golden-seed JUnit test, is the right fix. But most of its remedies are cosmetic (README, glossary, renames), and it says nothing about direction: quadtree, lots or the economy loop. It also miscounts the tracked files and overstates how much of the old test suite needs MySQL.
+
+#### B
+The best portfolio angle. The old repo already has the testable pattern that the rewrite dropped (hand-built pipeline, golden constants, a `violations()` map, an H2 round-trip test). The `StrictMath` catch is sharp and checks out. However, B treats the working-tree quadtree as "staged" and advises "Commit staged work at the end of every session". Done today, that would record a HEAD that doesn't compile, which is the exact failure B warns about. A dead end in `graph.png` says nothing about islands, because a degree-1 node is still connected. The generic `Positioned` quadtree and the JS demo are gold-plating at this stage.
+
+#### C
+The deepest design critique, and its citations are accurate. It shows that the roadmap validates (step 7) before anything that could fail exists (steps 8–11). Tax has nowhere to go, industrial output has no buyer, incomes are random draws that wages will replace, and the life events need data the model doesn't have. Its throwaway closed-loop economy with money-conservation asserts, behind a neutral `Parcel` boundary, is the most valuable strategic advice of the five. It is weakened by the line-count extrapolation and a wrong staging date. It also critiques an old design that the rewrite hasn't committed to rebuilding.
+
+#### D
+Two good technical catches. The "lazy by default" claim at design-2.0.md:486 is wrong: no mapping sets `FetchType`, and `@ManyToOne` defaults to eager. Also, IDENTITY ids disable insert batching, so the "handful of multi-row statements" comment is false. Finding 6 is well evidenced: generation was declared done before the economy existed, and the economy then forced a supply-mix rework. But the headline per-tick cost attacks a persistence design nobody has written, and it stacks three guesses. And IDENTITY only disables insert batching, while the per-tick load D describes is UPDATEs, which still batch. Its recommendation largely duplicates C's.
+
+#### E
+The most actionable answer. It gives sized tasks with "done when" criteria and proves the staged-index trap from the index itself. It proposes a golden test without Spring, plus an edge fingerprint that doesn't depend on order ("counts can match while streets move"). It adds an invariants test and a correct caveat on the 2× search-radius shortcut. Every reference I checked holds. Its horizon is one week of generation work, and it puts off the sustainability question that C and D raise.
+
+### Ranking
+1. E: accurate, can be done now, and protects determinism.
+2. B: the right job-hunting framing and reuse of tests that already work, despite the harmful commit advice.
+3. C: the most important long-term insight, but further from the next task.
+4. A: correct, cheap clean-up with little effect on the project's direction.
+5. D: mostly repeats C, and its own main argument rests on stacked guesses.
+
+### Weakest argument
+From C: "at that pace, rebuilding old steps 2–4 … takes more than a year before step 5 starts." It measures pace in lines per day over a window that includes a 54-day idle gap. It compares against old code that C itself says was written under an AI-QA workflow. And it assumes the rewrite must reproduce the old line counts, though the graph version of step 2 is 326 lines against 3,235. It also undercuts C's own advice to jump ahead to a throwaway economy.
+
+### Factual errors about the code
+- **B**, "about 20 `GenerationParams` query fields": `GenerationParams.java:29-68` declares 40 fields.
+- **B** calls the staged quadtree sealed and record-based. `git show :<path>` gives `public interface QuadSquare {}`, `public class Leaf {}` and `public record Branch() {}`, and for `QuadTreeBuilder.java` it gives `public class FrozenQuadtree {}`.
+- **B**, minor: a plain `git ls-tree HEAD` prints 7 entries (12 is the `-r` count). The `@Value` fields are at `:25-42`, not `:23-41`.
+- **A**, "10 Java files (`git ls-files`)": the index holds 11 `.java` files. HEAD, which is what GitHub shows, holds 5.
+- **A**, "The tests also need … `RaggaDB`": only `RaggaBackendApplicationTests` does. Both JPA tests use `Replace.ANY`, which swaps in H2.
+- **C**, "sat staged for 11 days": the staged blobs' loose-object mtimes run from 2026-10-18 02:29 to 10-24 17:12. The name `FrozenQuadtree` first appears in notes Q15 and Q17, both dated 10-18. The 11 days is the gap since the last commit.
+- **C**, minor: "restarted four times" lists four approaches, counting the first one.
+
+### Confirmed claims
+- **B:** `GenerationRegressionTest` has 13 GOLDEN_* constants, seed 42 at 400×400, a determinism test and no Spring. `violations()` returns `Map<String,Long>`. H2 is at old pom.xml:72-78 and absent from the new pom. GraphGenerator lines :26, :43-44, :121-122, :139, :157, :172, :234, :274/277 and :324 all match. The notes at :4052-4053 say to use `StrictMath`. `CityConfig` has CRC32, `parse`, `normalized` and a `long` seed. Nothing checks connectivity. Also confirmed: controller :180, the preview doesn't persist anything, the 3×3 contact sheet, the HousingMarketService Javadoc, imports and constructor, and the 360- and 548-line counts.
+- **A:** the properties comments and credentials, .gitignore:1, "Ini" adding the 326-line generator, the unused import, 7.4 MB of tracked PNGs, and design-2.0.md :5, :58, :324 vs :339, and :490.
+- **C:** all the design-2.0.md citations, the €100–500k starting capital, 4,128 untracked lines, the 3,235/2,305/1,945 line counts, and the 47/102/37/54-day commit gaps. Committed `CityConfig` matches the docs example except for one comment. Only 90 tracked lines are older than 06-27.
+- **D:** the golden counts, the IDENTITY sites, 7 JOINED tables for `Building` plus 3 for `Owner`, `Occupation` linking to no building or company, and the 0.95 vacancy factor.
+- **E:** the staged `FrozenQuadtree`, `…Error` and package mismatch, the stubs at :30-52, `QuadTree` lacking the `findWithin` that Q21 calls, the default config, and the 3–15% gaps measured in Q16 and Q22.
+
+### Missed by all five
+None of them weighs the agreed way of working (the developer writes the code, the AI only advises) against advice that pushes for speed. "Apply Q21's wiring" (E) and "finish in one sitting from Q21" (C) would make the quadtree a second "mostly by claude" block, the same interview problem B points out. Writing it by hand against E's brute-force equivalence test, with Q21 as the reference answer, keeps both the learning and the momentum.
+</script>
+</section>
+
+<section class="s" id="r3">
+  <p class="label s-tag">Reviewer 3 · checked answer C (Contrarian) most closely</p>
+  <h3>Ranking: C, E, B, D, A</h3>
+<script type="text/markdown">
+### Critiques
+
+#### A
+An accurate audit of the repo as a newcomer would see it. Three things it finds are real: the broken staged index (`public class FrozenQuadtree` in `QuadTreeBuilder.java`), the comments copied into `application.properties` (RAGGADB vs `/Ragga`, `update` vs `create-drop`), and the three meanings of "seed". Taking generation out of MySQL is the right core fix. The old-repo bullet list nitpicks a repo nobody is meant to open. Dropping the web dependencies is premature while a Godot client talking to a Java server is still an option. It never asks whether the project can reach its goal.
+
+#### B
+Strongest on the job-hunting angle. Its points are concrete and correct: publish the old working tree, close the `StrictMath` gap, check invariants across many seeds, and check connectivity. On `StrictMath`, the developer's own notes (`java-notes.html:4052-4053`) say to use it, but the code calls `Math.cos/sin/atan2` (`GraphGenerator.java:121-122, 274, 277`). Pulling out `HousingMarketService` and adding a `?code=` endpoint are low priority while there are no lots. The "islands" guess rests on a dead end in `graph.png`, and a dead end isn't a disconnection. It misses that the staged index doesn't compile.
+
+#### C
+The most original analysis. Nothing receives tax and nothing buys industrial or farm output. Income is calibrated to a lognormal draw that wages will replace, and the economy reads `TileType[][]`/`DensityField` directly. I verified each of these, and each would fail the core rule however well step 2 is built. The money-conservation prototype and a neutral `Parcel` record are the highest-value recommendations in the set. It overstates in places:
+- "Every generation restart also wipes the economy" is too broad: only the last restart had an economy to lose.
+- The gap list picks the four longest gaps and skips the ten commits made in 19 days.
+- It never notices that the staged quadtree files are broken placeholders.
+
+#### D
+It shares C's best point: generation was declared done, then the economy forced changes to building placement. It adds a real doc error: `design-2.0.md:486` calls `@ManyToOne` "lazy by default", but JPA defaults to EAGER and no mapping sets `LAZY`. The tick-cost model stacks guesses on a persistence design nobody has made. It also misapplies IDENTITY, which disables insert batching, while the per-tick cost it computes is UPDATEs. The in-memory `tick()` with a conservation test is sound, but C already proposes it.
+
+#### E
+The most actionable. It gives correct stub locations and an equivalence test. It also proposes a golden test without Spring that pins an order-independent fingerprint of the edges, since counts can match while streets move. Its caveat on the 2× crossing-search shortcut is correct, and it catches all three bad staged files. The 2–3 h estimates are optimistic for someone writing every method body by hand. It stays inside generation and says nothing about whether the economy loop can close.
+
+### Ranking
+1. **C**: the only answer that finds flaws that would fail the core rule whatever happens in step 2.
+2. **E**: the safest, most concrete plan for the week, and it prevents a broken commit.
+3. **B**: the best portfolio and determinism advice for a job-hunter.
+4. **D**: a good argument that generation can't be finished before the economy, but it mostly repeats C and its performance case is speculative.
+5. **A**: accurate, but limited to repo hygiene.
+
+### Weakest argument
+C, finding 6: "at that pace, rebuilding old steps 2–4 … takes more than a year." It compares ~9,200 lines produced in an AI-QA workflow ("the full file every time", `design-2.0.md:25-35`) with ~830 lines the developer is deliberately writing by hand to learn. It counts a 54-day commit gap as pace and assumes the rewrite needs as many lines as the old code. Lines per day doesn't measure progress here, yet the "will stall" headline rests on it.
+
+### Factual errors about the code
+- **C**, "sat staged for 11 days": the staged blobs' object mtimes run from 10-18 02:29 (`QuadTree.java`) to 10-24 (checked with `stat` on `.git/objects/..` for each `git ls-files -s` entry). The 11 days are the time since `f539899`.
+- **C**, "~9,200 lines all date from 06-27 to 07-14": `git blame HEAD` on the tracked main Java gives 90 lines from 01-22, 01-28 and 03-17, and 702 lines from 07-15 (`ae61f20`).
+- **C**, "restarted four times": WFC, Voronoi, grid and graph are four attempts, so three restarts.
+- **C**, "Q8 projects 1.9 s": `docs/README.md:27` says it was measured on a copy of the generator.
+- **A**, "the tracked files are 10 Java files": `git ls-files '*.java'` gives 11, and GitHub's HEAD has 5 (`git ls-tree -r HEAD`).
+- **A**, "the tests also need a MySQL database `RaggaDB`": only `RaggaBackendApplicationTests` does. `CityPersistenceRoundTripTest.java:50-52` and `BuildingTemplateSeederTest.java:20-22` run on H2 via `Replace.ANY`.
+- **B**, "about 20 `GenerationParams` query fields": there are 40.
+- **E** (and A by implication) count the staged `QuadTree.java`'s package mismatch as a compile error. javac doesn't enforce the directory layout for files passed explicitly. The two public-class/filename mismatches break the build on their own. (This follows from javac's rules; I didn't compile.)
+
+### Confirmed claims
+- **C**:
+  - `design-2.0.md` lines 4-6, 11-14, 27-35, 73-84, 120-126, 202, 219, 293-309, 364-368, 517-525, 539 and 542-543.
+  - Plan doc :50 and :31-36.
+  - `Inhabitant.java:28-34, :45`; `PopulationService.java:112-135`; `ECONOMY.md:128-131`; `HousingEconomics.java:61`; `HousingMarketService.java:113`; `BusinessMarketService.java:103`.
+  - No "government" or "treasury" text in the docs, and no calls to the debt setters.
+  - `1b1223b` deleted 1,802 lines. The commit gaps are 47, 102, 37 and 54 days.
+  - 4,128 untracked lines, and 3,235 / 2,305 / 1,945 lines in the generation, persistence and economy packages.
+  - HEAD's `CityConfig` equals the docs copy except for one comment.
+  - 15 of the 23 notes are about the quadtree.
+  - The stubs at `QuadTreeBuilder.java:30-52`, and `GraphGenerator.java:90-91, :157`.
+- **The other answers**:
+  - Staged `FrozenQuadtree` and `BranchDoesNotHave4ChildrenError`, and the cited `application.properties` lines.
+  - 13 `GOLDEN_*` constants, and the 1,321 / 725 / 431 / 208 counts.
+  - IDENTITY on every entity, no `LAZY`, and 7 + 3 JOINED tables.
+  - `Node.java:14,17`, and `tuner.html` at 360 lines.
+  - 7.4 MB of tracked PNGs, JDK 25 and Spring Boot 4.1.0.
+  - `8a41f76` adding all 326 lines of `GraphGenerator`, and E's default config values and line references.
+
+### Missed by all five
+`application.properties:8` sets `spring.test.database.replace=none`. So a future `@DataJpaTest` will still hit the local MySQL even after H2 is added. The old repo has the same line and had to override it with `@AutoConfigureTestDatabase(replace = Replace.ANY)` on each test.
+</script>
+</section>
+
+<section class="s" id="r4">
+  <p class="label s-tag">Reviewer 4 · checked answer D (Assumption-Ripper) most closely</p>
+  <h3>Ranking: E, C, B, D, A</h3>
+<script type="text/markdown">
+### Critiques
+#### A
+A is strongest on what a newcomer runs into first. It catches the `application.properties` contradictions (the RAGGADB comment against the `/Ragga` URL, the `update` comment against `create-drop`), the three meanings of "seed", and the staged placeholders that would make a commit fail to compile. Its key finding is that a pure algorithm can't run without MySQL, and the reasoning holds. Most of the rest (glossary, unused web dependencies, attribution wording) is polish that doesn't change what gets built next, and A never questions the project's direction. One count is wrong.
+
+#### B
+B fits a job-seeker best. The old repo already holds the strongest material (golden tests, the H2 round-trip test, the tuner, versioned city codes), and none of it is public. "Extract a pure generator, publish the old tree on a branch" is concrete and correct. The StrictMath point is real but low priority. A generic quadtree library and a `?code=` endpoint are scope creep while the builder methods are still stubs. "graph.png shows at least one dead end" says nothing about islands, since dead ends are allowed by design.
+
+#### C
+C gives the deepest design critique. Validation (step 7) comes before everything that can fail, tax has no recipient and industry has no buyer, so a turn loop would lose money by construction. The life-event data gaps (`birthDate` against an integer age, no family links) and the neutral `Parcel` boundary are concrete and checkable. The pace extrapolation compares AI-assisted line counts with code the developer now writes themselves on purpose, so "more than a year" means little. Two of its date claims are wrong.
+
+#### D
+D shares C's thesis (build the tick loop before more generation) and adds something real. It shows the economy forced generation changes after generation was declared done, which makes "generation first" a genuine bet. Its fetch-default correction holds against the annotations. Its cost model stacks guesses (household count, ms per statement) on a premise no document states, namely that every tick writes rows, and its IDENTITY point is misapplied.
+
+#### E
+E is the most executable answer: three ordered steps with files and "done when" criteria that match the developer's stated next steps. It also names the exact wrong class names sitting in the index. The order-independent edge fingerprint and the 2×-radius caveat for `isCrossingFree` are sound, because a crossing street's nearer endpoint lies within 1.5× the radius. It accepts generation-first without question, so it misses the structural risk C and D raise.
+
+### Ranking
+1. **E**: accurate and usable today, it prevents a broken commit and builds the regression tests the others only recommend.
+2. **C**: it finds the flaw (no money sources or sinks) that would break the core rule whatever the generator does.
+3. **B**: highest value for job-hunting, and publishing the old work is cheap and overdue.
+4. **D**: the generation-first insight is valuable, but it overlaps C and its performance case is partly wrong.
+5. **A**: accurate housekeeping, but mostly surface fixes.
+
+### Weakest argument
+D, finding 2: "Every entity uses `GenerationType.IDENTITY` … that turns off JDBC insert batching." That holds for INSERTs. But D's cost model is about 5.6k UPDATEs per tick, and IDENTITY doesn't affect UPDATE batching. Both repos already set `batch_size=100` and `order_updates=true` (`application.properties:25-27`). For D's scenario, what matters is the missing `rewriteBatchedStatements` and the TRACE logging. "Use sequence IDs" also needs care: MySQL has no native sequences, so Hibernate emulates them with a table.
+
+### Factual errors about the code
+- **A**, "the tracked files are 10 Java files (`git ls-files`)": `git ls-files` lists 11 (5 committed and 6 staged). `git ls-tree -r HEAD`, which is what GitHub shows, has 5.
+- **C**, "the quadtree has now sat staged for 11 days": the staged blobs (`git ls-files -s`, then the object file mtimes) were written between 2026-10-18 02:29 and 10-19 00:31, with one on 10-24. The staged `FrozenQuadtree` name also comes from Q15/Q17, dated 10-18. It has been 11 days since the last *commit*, as E says, not 11 days staged.
+- **C**, "~9,200 lines all date from 06-27 to 07-14": `ae61f20` is dated 2026-07-15, and `git blame` still shows lines from January and March (20 in `Inhabitant.java`, 18 in `Occupation.java`). Minor.
+- **D**, "the first economy pass then forced a new template catalog": `design-2.0.md:445` calls it the later calibration revision, after the Step 4 slice at :440-444. Minor, and the point stands: `git diff --stat 5dc422f ae61f20` shows `StubTemplateCatalog` and `BuildingPlacementService` changed.
+- **D**: the IDENTITY batching claim applied to updates (see above).
+
+### Confirmed claims
+- **D**: no mapping sets `fetch=` or `LAZY`. The `@ManyToOne` links at `Inhabitant.java:28,37`, `Household.java:36`, `Building.java:31` and `Company.java:44` are therefore EAGER. `Building` is JOINED over 7 entity tables and `Owner` over 3. Every root entity uses IDENTITY, including `GridCell.java:17`, so the "multi-row statements" comment at `:22-24` is false for inserts. Also confirmed:
+  - no `rewriteBatchedStatements`, and bind TRACE logging at `:14`
+  - "lazy by default" at `design-2.0.md:486`
+  - golden counts 1,321 / 725 / 431 / 208 and the 0.95 household factor
+  - 11 of 18 residential templates have capacity 1
+  - `Occupation` links to no building or company, nothing calls `new Inhabitant(`, and nothing calls `setDegree`
+- **A**: staged `FrozenQuadtree` and the wrong package in staged `QuadTree.java`; the properties contradictions; 7.37 MB of tracked PNGs; "Phase B" with no Phase A; the `:490` compile claim.
+- **B**: 13 `GOLDEN_*` constants; H2 at `pom.xml:72-78`; the StrictMath note at `java-notes.html:4052-4053` against `Math` calls at `:121-122, 274, 277`.
+- **C**:
+  - commit gaps of 47 / 102 / 37 / 54 days
+  - 4,128 untracked lines
+  - 3,235 / 2,305 / 1,945 lines for generation, persistence and economy
+  - tax mentioned only at :539
+  - €100–500k company capital at plan `:50`
+  - `1b1223b` deleted 1,802 lines
+  - `CityConfig` matches the example except one comment (against HEAD, ignoring whitespace)
+- **E**: nine `@Value` fields; staged `BranchDoesNotHave4ChildrenError`; builder stubs at `:30-52`; line references :127, :180, :244 and :290.
+
+### Missed by all five
+`passesEdgeConstraints` checks street crossings and angles, but nothing keeps a street away from an intersection it doesn't connect to. Streets can pass right next to unrelated nodes, which will produce sliver blocks once lots are cut from the graph's faces, as E proposes.
+</script>
+</section>
+
+<section class="s" id="r5">
+  <p class="label s-tag">Reviewer 5 · checked answer E (Executor) most closely</p>
+  <h3>Ranking: E, C, A, B, D</h3>
+<script type="text/markdown">
+### Critiques
+#### A
+This answer is strongest on hygiene. It catches that the staged quadtree files are stale placeholders, so a plain `git commit` would break HEAD. It also catches that the comments in `application.properties` describe the old project, and that generation can only run inside a Spring context that needs MySQL. The README, glossary and "three meanings of seed" fixes are cheap and real. Finding 9 spends a lot of space auditing a frozen repo, and it overstates the MySQL dependency of the old tests. It gives no view on what to build next.
+
+#### B
+The portfolio framing fits a job-hunter, and publishing the old 57-test tree is sound advice. It has two original technical catches: `Math.cos/sin/atan2` contradict the developer's own `StrictMath` note, and invariants checked over many seeds beat one golden count. But it piles on scope: jqwik, JMH, a CI badge, a generic `Positioned` quadtree and a preview endpoint. It also leaves out that switching to `StrictMath` changes output, so `CityConfig.VERSION` has to be bumped. A dead end in `graph.png` says nothing about islands.
+
+#### C
+This has the most important strategic insight. As designed, money has no sink or outside buyer: tax goes nowhere and industry has no customer. So the core self-sustaining rule can't pass, and step 7 is ordered before the steps it validates. The citations check out. The neutral `Parcel` record and "decide where tax goes" are cheap and high-leverage. The "more than a year" pace estimate extrapolates from a period spent mostly on design notes, and the answer never says how its economy prototype fits beside the confirmed graph work.
+
+#### D
+It repeats C's roadmap critique and adds a valid warning: run the tick loop on plain objects and persist snapshots. Its point that zone ratios were fixed without any jobs model is sharp. But the headline cost figures stack guesses (statement latency, 50k inhabitants), and the `IDENTITY` argument is misapplied (see below). Much of it overlaps with C.
+
+#### E
+E is the most actionable. It gives three ordered items with file and line targets and testable "done when" criteria, and they match the confirmed next step. The edge fingerprint that doesn't depend on order, and the caveat on the 2× radius, improve on the count-only check in Q17. It has gaps:
+- It never says that `contextLoads` still needs MySQL, so `./mvnw test` won't be green with MySQL stopped.
+- A *local* branch doesn't fix the one-disk risk E itself cites.
+- It ignores portfolio visibility and C's economy risk.
+
+Does each item fit one evening?
+- **Item 1 (~2 h): fits.** Q21 holds the method bodies; the developer only adapts names (`x/y`, `intersectsWith`, `ChildWithNode`).
+- **Item 2 (~3 h): fits a full evening.** All default values are exact in tenths, and seed 67 gives the same `Random` as an int or a long, so `normalized()` keeps 326/549.
+- **Item 3 (~2.5 h): optimistic.** Six brute-force invariants, plus passing `index`/`tree` through four methods, is closer to two evenings for an early-career developer. The invariants test should be its own evening.
+
+### Ranking
+1. **E**: concrete, accurate, ordered, and aligned with the confirmed plan.
+2. **C**: finds the design flaw that would sink the core rule, with solid evidence.
+3. **A**: accurate, cheap fixes, and it caught the commit trap.
+4. **B**: useful portfolio and test ideas, diluted by scope creep.
+5. **D**: a real architecture warning, but speculative numbers and mostly covered by C.
+
+### Weakest argument
+From D, finding 2: "Every entity uses `GenerationType.IDENTITY`… that turns off JDBC insert batching". D offers this as making its per-tick cost worse. But the workload D computed is about 5.6k **UPDATEs** of existing rows. `IDENTITY` only blocks **insert** batching, and `batch_size=100` with `order_updates=true` already batch updates. The real cost driver, round trips without `rewriteBatchedStatements`, is a separate point. The argument props up the headline with a mechanism that doesn't apply.
+
+### Factual errors about the code
+- **A, "10 Java files" (`git ls-files`):** the index has 11 `.java` files, and six of them are only staged. `git ls-tree -r HEAD`, which is what GitHub shows, has 5 Java files.
+- **A, "The tests also need a MySQL database `RaggaDB`":** only `RaggaBackendApplicationTests` uses `@SpringBootTest`. `CityPersistenceRoundTripTest.java:50-51` runs on H2 (`@DataJpaTest`, `Replace.ANY`), and `GenerationRegressionTest` uses no Spring.
+- **B, "about 20 `GenerationParams` query fields":** `GenerationParams.java` declares 40.
+- **C, "the quadtree has now sat staged for 11 days":** the index timestamps from `git ls-files --debug` are 10-15 (`QuadTree`), 10-19 (four files) and 10-23 (the exception). The 11 days is the time since the last commit.
+- **C, Voronoi "−1,802 lines":** that is the whole of `1b1223b`, including the 348-line `IMPLEMENTATION_GUIDE.md` and `Job.java`. The `voronoi/` files total 1,411 lines.
+- **E, "Q16 and Q22 measure 3–15% gaps on a run that takes about 0.3 s":** Q16 was measured on an 11,106-node, 9000² city (`docs/README.md:19`), not on the 0.3 s seed-67 run.
+- **A and E, staged files that break HEAD:** in the staged `QuadTree.java`, the package/folder mismatch alone is not a javac error. The two public-class name mismatches are.
+- **Minor citation drift:** C cites plan `:50` (the capital is at `:51`); B cites `:23-41` (the fields are at `:25-42`).
+
+### Confirmed claims
+**E:**
+- `QuadTreeBuilder:30-52` are stubs; `insert` and `ChildWithNode` are done.
+- `QuadTree` has only `collectWithin` and `nodeCount`, while Q21 calls `tree.findWithin`.
+- `GraphGenerator` has nine `@Value` fields plus two constants at `:25-44`, the starter at `:56-61`, and the commented-out starters at `:58-60`.
+- The wiring lines `:65-68`, `:127`, `:128`, `:71-80`, `:180`, `:182`, `:244` and `:290` are correct.
+- The default config matches `application.properties` and `CityConfigTest`.
+- `Node.degree` (`:17`) is never set.
+- The staged files declare `FrozenQuadtree` and `BranchDoesNotHave4ChildrenError`.
+- The last commit is `f539899` (10-14).
+- Q11–Q23 are 13 quadtree questions.
+- Q17's "done when" checks counts only.
+- `GenerationRegressionTest` says "No Spring context" (`:27`) and was added in `f166213`.
+- The 2× radius caveat is geometrically right.
+
+**A:** `8a41f76` adds all 326 lines of `GraphGenerator`; the import in `RaggaApplication` is unused; the "RAGGADB" comment was copied from the old repo; `design-2.0.md:5`, `:58`, `:324`/`:339` and `:490` say what A claims; the tracked PNGs total 7.4 MB.
+
+**B:** there are 13 `GOLDEN_*` constants; H2 is at old `pom.xml:72-78`; the `StrictMath` note is at `java-notes.html:4052-4053`, against `Math.cos/sin` at `:121-122` and `atan2` at `:274`/`:277`; the seed is an `int` (`:26`) while `CityConfig.seed` is a `long`.
+
+**C:** the commit gaps are 47, 102, 37 and 54 days; there are 4,128 untracked lines; the old packages have 3,235 / 2,305 / 1,945 lines; the only treasury-like mention is "municipal?" at `design-2.0.md:539`; `Inhabitant:45` is a `LocalDate`.
+
+**D:** no mapping sets a `FetchType`; `IDENTITY` is at `Inhabitant:11`, `Owner:31` and `Node:14`; `design-2.0.md:486` says "lazy by default"; the golden counts are 1,321 buildings and 725 residential lots; `PopulationService:76` sets households to capacity × 0.95.
+
+### Missed by all five
+`Node` has no `equals`/`hashCode`, so it hashes by identity. Determinism therefore relies on JGraphT's insertion-ordered sets. Any `HashSet<Node>` or `HashMap` iterated in later code (tree wiring, lots) would change the city from run to run and silently break city codes.
+</script>
+</section>
+
+
+<!-- ============ ADVISORS ============ -->
+<div class="part-head">
+  <p class="eyebrow">Phase 1</p>
+  <h2>The five advisors</h2>
+  <p>Each one got the same brief and read-only access, and answered without seeing the others. The answers are reproduced exactly as written; reviewer corrections are listed under Errors above.</p>
+</div>
+
+<section class="s" id="a-con">
+  <p class="label s-tag">Advisor 1 · Contrarian · blind label C</p>
+  <h3>What will fail or stall this project?</h3>
+  <div class="facts"><span class="chip info">average rank 2.0 of 5</span><span class="chip warn">weakest-argument votes: 3</span></div>
+<script type="text/markdown">
+### Headline
+Ragga will stall before its core rule is ever tested: a city that sustains itself can only be checked once roadmap steps 8–11 exist together, and the developer keeps rebuilding step 2 instead of getting there.
+
+### Findings
+1. **The roadmap lays a cycle out as a straight line.** Step 7 ("simulate N turns, validate stability") comes before step 8 (income). Salaries need employer cash (step 10), spending is company revenue (steps 9–10), and layoffs, the only brake, sit in steps 10–11. Nothing can pass or fail until steps 8–11 all exist. *design-2.0.md:364–368, 217–235, 269–277.*
+2. **Money has no defined sources or sinks.** Tax is deducted (design-2.0.md:219), but nothing receives it. The only hit for government, municipal or treasury is the open question at :539. Shop spending reaches only commercial companies (:226–235). Industrial and farm companies start with €100–500k (commercial-industrial-agrarian-plan.md:50) and have no buyer, because revenue is deferred (:31–36). On the first turn-loop run they pay wages until their cash runs out, and the layoffs that follow cut spending. The collapse comes from the structure, so tuning can't fix it.
+3. **The turn-0 calibration will stop being valid.** Household income is drawn from a lognormal+Pareto distribution (PopulationService.java:112–135), not from wages, and the housing dials were tuned to that (ECONOMY.md:128–131). Once step 6 makes income the sum of salaries, the tuning no longer fits the population. Mortgage balances are never stored (design-2.0.md:517–525), so the "service debt" stage has nothing to service.
+4. **Life events need data the model doesn't have.** Personal bankruptcy rejoins "a parent, sibling" (design-2.0.md:302–306), but `Inhabitant` has only `household`/`householdRole` (Inhabitant.java:28–34). Age is meant to be an integer in simulation years (design-2.0.md:309), but `Inhabitant` stores `LocalDate birthDate` (Inhabitant.java:45), and turns-per-year is still an open question (design-2.0.md:542–543). The homelessness penalties (design-2.0.md:293–297) lower income, which keeps the household homeless: a trap loop.
+5. **Every generation restart also wipes the economy.** The economy reads grid types directly: `TileType[][]` (HousingEconomics.java:61) and `DensityField` (HousingMarketService.java:113, BusinessMarketService.java:103). Generation has been restarted four times: WFC `f3c6b20`, Voronoi `df7a1b3` (deleted in `1b1223b`, −1,802 lines), the grid (`f166213`, "FINISHED THE WHOLE GENERATION MODEL"), and now the graph.
+6. **Commit cadence.** The gaps between commits are 47, 102, 37 and 54 days, and the quadtree has now sat staged for 11 days. The old repo's ~9,200 lines all date from 06-27 to 07-14 (commits plus untracked file mtimes) and were written under an AI-QA workflow (design-2.0.md:27–35). The rewrite has ~830 lines in 87 days. Of those, `src/.../CityConfig.java` matches `docs/examples/CityConfig.java` except for one comment, and the edge code is marked "mostly by claude" (GraphGenerator.java:157). *Guess:* at that pace, rebuilding old steps 2–4 (≈3,235 generation + 2,305 persistence + 1,945 economy lines) takes more than a year before step 5 starts.
+7. **The current work is off the critical path.** 15 of the 23 notes (Q8, Q10–Q23) are about the quadtree. Generation takes ~0.3 s, and Q8 projects 1.9 s at 9× the size. `findWithin`, `collectWithin`, `build`, `freeze` and `split` are still empty (QuadTreeBuilder.java:30–52), even though tested code exists in Q21.
+8. **The rewrite has no regression net.** The "326/549" check is a `println` (GraphGenerator.java:90–91). The only test starts Spring and MySQL, which runs the `CommandLineRunner`.
+9. **Work is at risk.** The old repo's 4,128 untracked lines exist on one disk, and `ae61f20` doesn't compile. The public `master` (`f539899`) has no README and one test that needs MySQL. For a job-hunter, that's the weakest version of the portfolio.
+
+### What the developer is getting wrong
+- **Optimizing before building.** Since 10-13 they've worked on a spatial index for a 0.3 s generator (Finding 7), while lots, zoning and the whole loop don't exist yet.
+- **Building turn 0 deep while the loop doesn't exist.** Bidding wars, €/m² heatmaps and leasing were polished (commercial-industrial-agrarian-plan.md:20–29), while the self-sustaining rule (design-2.0.md:11–14) has no code at all.
+- **Using commits as a save button.** `ae61f20` ("TEMP UPDATE CHANGING PC") doesn't compile, and the economy code was never committed.
+- **Stale docs fed to AI sessions.** design-2.0.md:202 still describes the takeover as converting `SimulatedCommercial → PlayerCommercial`, while :120–126 says that split is gone and :73–84 lists deleted classes. The doc exists to brief new sessions (:4–6).
+
+### Recommendation
+1. Commit the old working tree to a branch (for example `archive/grid-economy`) and push it.
+2. Finish the quadtree in one sitting from Q21, or shelve it until a city takes more than 5 s. Then make `GraphGenerator` a plain class that takes `CityConfig`, and add a JUnit test without Spring that checks seed 67 gives 326/549.
+3. Before lots and zoning, build a throwaway closed-loop economy in plain Java, with no JPA and no map. It needs households, one employer type, a treasury, one shop type and an export buyer for industry. Run 1,000 turns and assert that money is conserved (change in total = sources − sinks) and that employment stays within a band. That is the core rule's test, and the result tells generation what to output, such as jobs and dwellings per lot.
+4. Before writing any loop code, decide where tax goes and who buys industrial and farm output.
+5. Limit v1 life events to hiring, layoffs, and deaths replaced by births. Defer counter-offers, homelessness penalties, personal bankruptcy, player entry and the 3D engine.
+6. Make the economy read a neutral `Parcel` record (position, area, centrality, amenity) instead of grid or graph types, so the next generation rewrite doesn't wipe it.
+7. Add a README to `master`.
+</script>
+</section>
+
+<section class="s" id="a-ar">
+  <p class="label s-tag">Advisor 2 · Assumption-Ripper · blind label D</p>
+  <h3>Is the architecture right, and which assumption costs the most if wrong?</h3>
+  <div class="facts"><span class="chip info">average rank 4.6 of 5</span><span class="chip warn">weakest-argument votes: 2</span></div>
+<script type="text/markdown">
+### Headline
+The project's one acceptance test is a city that runs itself for N turns (`design-2.0.md:11-14`). In nine months it has never run once, and the row-per-entity JPA model planned for it would make each validation run take minutes to an hour, so the tick loop should be built now, in memory, before any more generation work.
+
+### Findings
+1. **(a) Saving live simulation state to the database row by row is the wrong model.** In the old repo, seed 42 at 400×400 gives 1,321 buildings and 725 residential lots (`GenerationRegressionTest.java:40-48`). Households are dwelling capacity × 0.95 (`PopulationService.java:76`, `EconomyConfig.java:229`), and most homes have capacity 1 (`StubTemplateCatalog.java:42-67`). My guess is ~1.5k households, ~3.5k inhabitants and ~600 companies. The per-turn income order (`design-2.0.md:217-224`) changes money on every inhabitant, household and company, which means ~5.6k UPDATEs per tick. At 50k inhabitants, still small for a Cities: Skylines-style city, it is ~80k. At 0.1–0.3 ms per local MySQL statement (guess), that is ~1–2 s or ~8–25 s per tick. A 120-tick validation run (ten years of monthly turns) would take ~3 min or ~20–50 min. Plain Java objects would do the same arithmetic in tens of milliseconds (guess, not counting shop choice).
+2. **The settings make it worse.** Every entity uses `GenerationType.IDENTITY` (`Inhabitant.java:11`, `Owner.java:31`, the new `Node.java:14`), and Hibernate's documentation says that turns off JDBC insert batching. The MySQL URL has no `rewriteBatchedStatements=true`, and `org.hibernate.orm.jdbc.bind=TRACE` logs every bound parameter. Both repos' `application.properties` have a comment promising "a handful of multi-row statements", and these settings make it false. This is documented library behaviour; I did not measure it.
+3. **Every read pulls in far more than it needs.** No mapping in the old code sets `fetch = LAZY`, and JPA loads `@ManyToOne` eagerly by default. So loading one `Inhabitant` also loads `Household`, then `residence` (`Building`, 7 JOINED tables), then `owner` (`Owner`, 3 tables). `design-2.0.md:486` calls these links "lazy by default", which is wrong.
+4. **Saving nodes and streets (notes Q20) is harmless by itself.** They don't change, they are small, and the 42-character city code can regenerate them. But `Node.degree` is already a saved column that nothing ever sets (`Node.java:17`).
+5. **(b) The roadmap validates the city before anything in it can fail.** Step 7 (simulate N turns) comes before income, spending, companies and life events (steps 8–11, `design-2.0.md:356-369`), and a loop without those is trivially stable. Step 1 put the schema first and produced an `Inhabitant` that nothing ever creates. Step 6 has nothing to match people to: `Occupation` links to no building or company (`Occupation.java:14-31`). Step 10's `Company` was needed early and was in fact built early (the untracked `company/` package).
+6. **(c) The assumption I'd bet against is that generation comes before the economy and can be finished first.** Commit `5dc422f` declared generation done. The first economy pass then forced a new template catalog and density-aware placement, because owner-occupancy "is gated on the housing SUPPLY MIX" (`ECONOMY.md:133-146`, `design-2.0.md:445-457`). The zone ratios (725 residential, 431 commercial, 208 industrial lots) were fixed without any jobs model. Incomes come from a lognormal draw (`PopulationService.java:110-135`) that job matching will replace, so the housing calibration rests on placeholder incomes. If the assumption is wrong, the zoning, placement and calibration all have to be redone, and the rewrite's next step (lots and zoning) makes the same bet. I rank it above "the economy can never be stable": that one would end the project outright, while this one quietly wipes out work already finished.
+
+### What the developer is getting wrong
+- They have made four passes at generation (WFC in `f3c6b20`, Voronoi in `df7a1b3`, the grid in `eae24f0`–`5dc422f`, now the graph) and are adding a quadtree to a run that already takes 0.3 s. Not one tick exists.
+- They trust comments copied from the old repo. The batching claim and "lazy by default" are both false (findings 2–3).
+- They treat the database schema as the design. Step 1 and making `Node` an `@Entity` came before any behaviour that needed them.
+
+### Recommendation
+1. Freeze generation at 326 nodes / 549 edges and put off the quadtree.
+2. Add a simulation package with no JPA in it. Use plain household, person, firm and job classes attached to graph nodes, plus a `tick(SimState, Random)` method that runs wage → tax → rent → spending → firm revenue → hire/fire.
+3. Turn step 7 into a golden test that needs no Spring: seed 67 for 1,000 ticks. It should check that money is conserved (all cash plus what tax removed), that employment stays within a set range, and that the same seed gives the same result.
+4. Only then do lots and zoning, with zone ratios set by what that test needs.
+5. Save a snapshot every K ticks, plus the city code and tick number, mapped from the simulation objects. This is the same drafts → mapper split the old repo used (`PERSISTENCE.md:4-7`). Turn off TRACE bind logging. If JPA writes the snapshot, use sequence IDs and `rewriteBatchedStatements=true`.
+6. Write a short roadmap in the new repo that lists which old steps come back, in this order.
+</script>
+</section>
+
+<section class="s" id="a-exp">
+  <p class="label s-tag">Advisor 3 · Expansionist · blind label B</p>
+  <h3>What upside is being missed?</h3>
+  <div class="facts"><span class="chip info">average rank 3.0 of 5</span></div>
+<script type="text/markdown">
+### Headline
+The developer has already built most of a strong junior portfolio: golden-seed tests, a preview renderer, a tuner UI and a versioned city-code format. Almost none of it is visible on `github.com/GyselMax/Ragga`, and the rewrite has dropped the testable architecture that made the old repo good.
+
+### Findings
+1. **GitHub shows the weakest version.** `git ls-tree HEAD` lists 12 files. The one test is the empty `contextLoads` (`RaggaApplicationTests.java`), which needs MySQL. There's no README, and the first commit message is "Ini" (`8a41f76`). Still on disk only: the old working tree (57 passing tests, `static/tuner.html` at 360 lines, `grid.png`, `contact-sheet.png`, `economy-value.png`, `design-2.0.md` at 548 lines, `GENERATION.md`), the staged quadtree, and `docs/`.
+2. **The rewrite has a test template it can copy.** `GenerationRegressionTest` holds 13 `GOLDEN_*` constants (seed 42, 400²) plus `sameSeedIsFullyDeterministic`. It builds the pipeline by hand, with no Spring. `GenerationSanityCheck.violations()` returns named invariants as `Map<String,Long>`. `CityPersistenceRoundTripTest` runs on H2 (`@DataJpaTest`, `Replace.ANY`; old `pom.xml:72-78`). The new `pom.xml` has no H2.
+3. **The graph constraints are ready-made properties to test.** `passesEdgeConstraints` (`GraphGenerator.java:234`) enforces degree ≤ 4, no triangles, angles ≥ 30° and no crossings. `isFarEnough` (`:139`) enforces a minimum distance of 40. A `GraphInvariants.violations(graph, config)` checked over seeds 1–500 with `@ParameterizedTest` or jqwik would catch regressions that a single 326/549 golden count would miss. Connectivity (JGraphT `ConnectivityInspector`) isn't checked anywhere. Guess: the greedy `growStreet` (`:172`) can leave islands. `graph.png` shows at least one dead end.
+4. **The quadtree could be a small library, and the benchmark numbers already exist.** `QuadSquare` is sealed, `Leaf` and `Branch` are records, and they touch `Node` only through `getX()/getY()`. Making them generic over a `Positioned` interface would make the index reusable. `docs/README.md` already reports brute-force equivalence on 3,000 searches (Q21) and a 9× city dropping from 1.9 s to 0.2 s (Q8). Those were measured "on a copy of the generator", outside the repo, so no test or benchmark in the build backs them up.
+5. **`CityConfig` is the most portfolio-ready class, but its tests sit outside the build.** It has a versioned byte layout, a CRC32 checksum, `normalized()` and `parse()`. Its tests live in `docs/examples/CityConfigTest.java` as a `main()` that prints PASS/FAIL, including an exhaustive single-character typo sweep. That converts to JUnit almost line for line.
+6. **The old preview endpoint plus a city code makes a shareable-city demo.** `CityPreviewService` generates and renders without persisting anything. `CityGenerationController.java:180` exposes it with about 20 `GenerationParams` query fields. Swap those for `?code=` and every city becomes a URL. `GridContactSheet` (3×3 seeds) ports to the graph in about 50 lines. `java-notes.html` Q10 already ports `java.util.Random` to JS and rebuilds the seed-67 nodes in the browser, which is the seed of a static demo.
+7. **The housing market is a good interview story but needs work before it can be extracted.** The `HousingMarketService` Javadoc describes an "assortative + second-price approximation of the assignment-game competitive equilibrium", and `HousingMarketServiceTest` covers it with synthetic tests. It imports `City`, `GenerationResult`, `DensityField` and `PlacedBuilding`, so pulling it out needs a `Unit(quality, capacity)` / `Bidder(income)` interface. Its constructor injection already makes it testable without Spring.
+
+### What the developer is getting wrong
+- **The generator is locked inside Spring.** `GraphGenerator` is a `CommandLineRunner` with `@Value` fields (`:23-41`). It writes `graph.png` on every boot (`:324`) and can't be constructed in a plain unit test, so every test needs MySQL. The old repo got this right. `CityConfig` is ignored. `EDGE_MINIMUM_ANGLE` and `EDGE_MAXIMUM_DEGREE` are hardcoded (`:43-44`) even though the code format encodes them. The seed is an `int` (`:26`), but `CityConfig.seed` is a `long`.
+- **The determinism guarantee is weaker than the city codes promise.** The developer's own notes (`java-notes.html:4052-4053`) say to use `StrictMath` when seeds are shared between machines. The code still uses `Math.cos`/`sin` (`:121-122`) and `Math.atan2` (`:274`, `:277`). Shareable codes are the stated purpose of `CityConfig`.
+- **The same commit pattern that broke the old repo is happening again.** Never committing the economy code is why `ae61f20` doesn't compile. Now the quadtree is staged, `CityConfig` is modified and `docs/` is untracked. Meanwhile the public core algorithm carries "mostly by claude" (`:157`) with no tests behind it, which is a hard thing to defend in an interview. `application.properties:16-24` still describes `GridCell` and `update` mode, and `:7` commits the `root/password` login.
+
+### Recommendation
+1. **This week, publish the old work.** Commit the old working tree so it compiles again. Push it as a branch (`legacy/grid-v1`) or a separate archived repo, with a README that links the 57 tests, `tuner.html` and the PNGs.
+2. **Extract a pure generator.** Write `CityGenerator.generate(CityConfig) → Graph<Node, DefaultEdge>` with no Spring, plus `GraphPngRenderer` and a thin runner. Switch to `StrictMath` and re-baseline seed 67, which may move from 326/549 (a guess). Then add the tests: seed-67 golden, a run-twice determinism check, invariants over 500 seeds, and `CityConfigTest` as JUnit. Add H2 in test scope and a GitHub Actions `mvn test` badge.
+3. **Finish the quadtree** behind a brute-force equivalence test and a JMH or timed benchmark. Put the speed-up table in the README.
+4. **Write a README** with `graph.png`, a 9-seed contact sheet, a sample city code and an honest "how I used AI" paragraph. That paragraph should replace the inline attribution, and the tests should show the developer understands the code. Commit staged work at the end of every session.
+5. **Later**, add `GET /preview.png?code=…` and point a trimmed `tuner.html` at it.
+</script>
+</section>
+
+<section class="s" id="a-out">
+  <p class="label s-tag">Advisor 4 · Outsider · blind label A</p>
+  <h3>What would a newcomer or recruiter trip over?</h3>
+  <div class="facts"><span class="chip info">average rank 4.2 of 5</span></div>
+<script type="text/markdown">
+### Headline
+Someone who clones either repo can't tell what Ragga is. They also can't get its one visible output, `graph.png`, without first working out a hardcoded local MySQL setup. And the new repo is repeating the commit habit that left the old HEAD uncompilable.
+
+### Findings
+1. **The GitHub page explains nothing.** Apart from build scaffolding, the tracked files are 10 Java files (`git ls-files`). There is no README. Spring's `HELP.md` is gitignored (`.gitignore:1`), and `pom.xml` says only `<description>ragga</description>`. The commit messages are "Ini" (`8a41f76`, which adds all 326 lines of `GraphGenerator` at once) and "...seems very complex ;w;" (`f539899`).
+2. **The pom promises a web API that doesn't exist.** It pulls in `webmvc`, `tomcat` and `springdoc-openapi`, but there are no controllers, so Swagger would show nothing. The build needs JDK 25 and Spring Boot 4.1.0. Anyone on JDK 21 fails at compile.
+3. **`application.properties` contradicts itself.**
+   - Line 4 says "FYI I CHANGED THE DB TO RAGGADB", but the URL is `/Ragga`. The comment was copied from the old repo, where the URL really was `RaggaDB`.
+   - The `ddl-auto` comment says `update` keeps data across restarts, but the value is `create-drop`.
+   - Comments mention `GridCell` rows and `PERSISTENCE.md`, and neither exists in this repo. The settings sit under "# grid generation" and are called `GRID_WIDTH`, in a graph project.
+   - The login is hardcoded as `root`/`password`, and the URL has no `createDatabaseIfNotExist`.
+4. **The main class doesn't say what the app does.** `RaggaApplication` has an unused import of `GraphGenerator`. The real work is hidden in a `CommandLineRunner` (`GraphGenerator.java:50`). It writes `graph.png` into whatever folder the app runs from and prints two lines that get buried under Hibernate SQL DEBUG and bind TRACE logging. I didn't run it, but by reasoning: without a `Ragga` database the Spring context fails before the runner starts, so nothing is drawn. Generation never touches the database. `Node` is an `@Entity` that is never saved, so MySQL only gets an empty table that is created and then dropped. If startup does succeed, Tomcat probably stays up on port 8080 serving nothing (a guess).
+5. **No test can run on a fresh machine.** The only test is `contextLoads` (`RaggaApplicationTests`). `@SpringBootTest` needs MySQL and also fires the runner, so `./mvnw package` would likely fail without the database (inferred, not run). The `CityConfig` checks are a `main()` program in the untracked `docs/examples/CityConfigTest.java`.
+6. **Domain words are undefined or overloaded.**
+   - "Split number" is never defined (`GraphGenerator.java:98`; the starter value is `5.5` at `:57`). You have to read `:109–124` to learn that it counts the generations left, and that a fraction is the chance of splitting.
+   - "Seed" means three things: the random-number seed (`GENERATION_SEED`, `:25`), the starter nodes ("starter nodes aka seeds", `:55`; `CityConfig.java:49`), and city codes (`f539899`, "makes and parses Seeds").
+   - "City code" is explained only in a block comment (`CityConfig.java:10–30`), and nothing calls `CityConfig`.
+7. **`GraphGenerator.java:157` says "mostly by claude".** A reader can't tell which parts of the generator the developer wrote.
+8. **The staged quadtree would break HEAD.** The staged copies are old placeholders:
+   - Staged `QuadTreeBuilder.java` declares `public class FrozenQuadtree`, which is a compile error.
+   - Staged `QuadTree.java` sits in the quadtree folder but declares `package be.magycks.ragga.generation`.
+   - The real versions are unstaged. Even there, `build()` returns `null` and `split()` is empty.
+9. **The old repo, opened cold:**
+   - There is no README, and the root holds 7 MB of tracked PNGs (`contact-sheet.png` alone is 4.9 MB).
+   - The entry points (`GridVisualizer` and `/tuner.html`) are only described in docs inside package folders (`GENERATION.md:9`, `PERSISTENCE.md:9`).
+   - `design-2.0.md` opens by addressing "any AI assistant" (`:5`, `:20–25`).
+   - "Phase B" appears (`GENERATION.md:5`), but there is no Phase A. "Tenure" is defined only in the untracked `Tenure.java`.
+   - The committed `design-2.0.md:58` links to `ECONOMY.md`, which was never committed.
+   - `:324` is headed "Visualizer API (planned)", but the text below it says the feature exists.
+   - `:490` claims `./mvnw compile` catches errors through the context-load test, but compile runs no tests.
+   - The tests also need a MySQL database `RaggaDB` with user `cursist`.
+
+### What the developer is getting wrong
+- **They commit only part of their work without checking what goes in.** `ae61f20` ("TEMP UPDATE CHANGING PC") committed the edited tracked files but left out the new untracked packages those edits depend on, which is why HEAD has 110 errors. The new repo repeats the pattern: stale stubs are staged and the real versions are unstaged (`git status`). A plain `git commit` would push a HEAD that doesn't compile.
+- **They copy config without re-reading it.** Every comment in the new `application.properties` describes the old project.
+- **They tie a pure algorithm to infrastructure it doesn't use.** Generation needs no database, yet it can only run inside a Spring context that requires MySQL. That blocks both the demo and the tests.
+
+### Recommendation
+1. Before every commit, run `./mvnw verify`, then check `git status` and `git diff --cached`. Restage the quadtree from the working tree, or unstage it until it compiles. Add `graph.png` and `docs/.obsidian/` to `.gitignore`. `docs/README.md` contains a personal vault path and a claude.ai link, so review it before committing `docs/`.
+2. Write a one-screen README with:
+   - two sentences on what Ragga is;
+   - a short glossary: node, street, split number, and the three kinds of seed;
+   - exact run steps;
+   - a committed seed-67 image.
+3. Make generation runnable without MySQL. Either move it into a plain class with its own `main`, or keep the database out of startup until something is actually saved. Add a JUnit golden-seed test that asserts 326/549, and move `CityConfigTest` into `src/test` as JUnit.
+4. Rewrite the comments in `application.properties`, and read the credentials from environment variables, for example `${DB_PASSWORD}`.
+5. Rename the three seeds: `rngSeed`, `starters`, `cityCode`. Replace "mostly by claude" with exact attribution: which methods, and what the developer changed.
+6. Remove the unused web and Springdoc dependencies, or add one real endpoint.
+</script>
+</section>
+
+<section class="s" id="a-exe">
+  <p class="label s-tag">Advisor 5 · Executor · blind label E</p>
+  <h3>What are the next three work items?</h3>
+  <div class="facts"><span class="chip info">average rank 1.2 of 5</span></div>
+<script type="text/markdown">
+### Headline
+The quadtree needs about two more hours, and Q21 already has the reference code. The week's order is: finish and commit the quadtree, take generation out of Spring and put it behind a golden-seed test, then wire the tree into the three scans.
+
+### Findings
+1. **Finish `QuadTreeBuilder` and commit it (about 2 h).**
+   - **Goal:** write the bodies of `findWithin`, `collectWithin`, `build`, `freeze` and `split` (`QuadTreeBuilder.java:30-52`, all stubs). `insert` and `ChildWithNode` are already done. Also add `findWithin` to `QuadTree`: `QuadTree.java` has only `collectWithin` and `nodeCount`, but Q21's wiring calls `tree.findWithin`.
+   - **Files:** `quadtree/QuadTreeBuilder.java`, `quadtree/QuadTree.java`, and a new `src/test/java/.../quadtree/QuadTreeBuilderTest.java`. It should be plain JUnit with no `@SpringBootTest`, so it never touches MySQL.
+   - **Done when:** the test passes on about 2,000 nodes from a seeded `Random`:
+     - At radii 40, 120 and 240, `findWithin` on the builder and on the frozen tree returns the same set as a brute-force loop.
+     - `nodeCount()` and the summed leaf sizes both equal the number of nodes inserted.
+     - Building a `Branch` with fewer than 4 children throws `BranchDoesNotHave4ChildrenException`.
+     - The working-tree files are re-added with `git add` and committed.
+   - **Unblocks:** item 3. It also ends 11 days without a commit.
+
+2. **Take generation out of Spring and pin seed 67 (about 3 h).**
+   - **Goal:** create a plain generator class that is built from a `CityConfig` and whose `generate()` returns the graph. `GraphGenerator` shrinks to a thin `CommandLineRunner` that builds the config, calls the generator, prints the counts and draws. The nine `@Value` fields and two constants (`GraphGenerator.java:25-44`) and the hardcoded starter (`:56-61`) become `config.normalized()` and `starterNodes()`.
+   - **Files:** `GraphGenerator.java`, the new generator class, `application.properties` (also fix the stale `GridCell`/`update` comments at lines 16-27), and a new `GraphGeneratorTest.java`.
+   - **Done when:** a JUnit test with no Spring context, run with MySQL stopped, generates the default config (1500, 1500, 40, 80, 16, 1, 4, 120, 30, 4, starter 750/750/5.5, seed 67). It asserts 326 nodes, 549 edges, and a pinned fingerprint of the edge set that doesn't depend on order (for example, the sorted endpoint coordinates).
+   - **Unblocks:** every later generation change can be checked in seconds without booting Spring. `CityConfig` stops being dead code. The commented-out starters (`:58-60`) become one city code.
+
+3. **Wire the tree into the three scans (about 2.5 h).**
+   - **Goal:** first write a brute-force invariants test on the generated graph: every node in bounds, every pair at least 40 apart, degree ≤ 4, no triangles, no angle under 30°, no crossing streets. Then apply Q21's wiring:
+     - Feed the builder at `:65-68` and `:128`.
+     - `isFarEnough` takes the builder's results instead of `graph.vertexSet()` (`:127`).
+     - Freeze once after the growth loop (`:71-80`).
+     - `growStreet` loops over `tree.findWithin(...)` instead of `graph.vertexSet()` (`:180`).
+     - `isCrossingFree` loops over `edgesOf` for the nodes within 2× the search radius instead of `graph.edgeSet()` (`:244`).
+   - **Files:** the generator class from item 2 and `GraphGeneratorTest.java`.
+   - **Done when:** both tests pass unchanged (326/549, same fingerprint, zero invariant violations), and the work is committed.
+   - **Unblocks:** bigger cities (Q8 measured 1.9 s dropping to 0.2 s for a city 9× larger) and lot subdivision, which needs "what's near here" queries.
+   - **Caveat:** the 2× shortcut is only correct while every street is no longer than `EDGE_SEARCH_RADIUS`. Only `isWithinSearchRadius` (`:182`) enforces that, so the invariants test is what catches it if a later step adds longer streets.
+
+4. **Cut or defer:**
+   - **More quadtree questions or benchmarks:** Q16 and Q22 measure 3–15% gaps on a run that takes about 0.3 s, and Q16 itself concludes that speed doesn't decide.
+   - **Persistence:** `Node` is an `@Entity` that nothing saves. `Node.degree` (`Node.java:17`) is never set, since the generator uses `graph.degreeOf` (`:290`). Delete the field and persist once lots exist.
+   - **The 3D engine choice (Q6):** nothing before rendering depends on it.
+   - **Porting old steps 3–12:** the graph has no lots yet to put buildings or households on.
+   - **Turning `docs/examples/CityConfigTest.java` into JUnit:** it's a `main()` PASS/FAIL harness with no package. Worth 45 minutes, but after item 3.
+
+### What the developer is getting wrong
+1. **The staged quadtree doesn't compile, which repeats what happened to `ae61f20`.** In the git index, `QuadTreeBuilder.java` declares `public class FrozenQuadtree`, `BranchDoesNotHave4ChildrenException.java` declares `BranchDoesNotHave4ChildrenError`, and `QuadTree.java` sits in package `be.magycks.ragga.generation`. A plain `git commit` would record a HEAD that doesn't compile. The last commit is `f539899` (10-14, "Now Moving onto Quadtrees"), and nothing has been committed since.
+2. **Design keeps replacing code.** Thirteen questions (Q11–Q23, 10-15 to 10-23) were about the quadtree, yet all five builder method bodies are still empty, even though Q21 holds the complete, tested code.
+3. **The regression check is manual and needs MySQL.** "326/549" is read from `println` output (`GraphGenerator.java:90-91`) after a Spring boot. That boot connects to MySQL, drops and recreates the schema (`application.properties:5,20`) and overwrites `graph.png` (`:324`). The developer already solved this in the old repo: `GenerationRegressionTest` runs with "No Spring context" against golden constants (added in `f166213`). Q17's "done when" also checks only counts, and counts can match while the streets move.
+
+### Recommendation
+- **Before any commit:** re-`git add` the working copies, or unstage them. Never commit the current index.
+- **This week:** do items 1→3 in order, each ending in its own commit with green tests.
+- **One-off, about 10 minutes:**
+  - In the old repo, commit the untracked `economy`/`company`/`owner` work to a local branch. The working tree that passes 57/57 exists nowhere else, because `ae61f20` doesn't compile and GitHub lost the history.
+  - Add `graph.png` to `.gitignore`.
+- **After that:** no more quadtree questions until item 3 is green. The next question should be how lot subdivision finds city blocks in the street graph (a guess: the faces of the planar graph). Write it as a short design note committed in the repo, since the rewrite has none.
+</script>
+</section>
+
+
+<!-- ============ BACKGROUND ============ -->
+<div class="part-head">
+  <p class="eyebrow">Phase 0</p>
+  <h2>Background</h2>
+</div>
+
+<section class="s" id="brief">
+  <p class="label s-tag">The brief</p>
+  <h3>What every advisor was given</h3>
+<script type="text/markdown">
+
+**What it is.** A solo Java project by an early-career developer (Java certificate, no dev job yet, job-hunting). It is a Spring Boot / JPA / MySQL backend for an autonomous, NPC-driven city simulation, with Cities: Skylines II as the design reference (cited in `ECONOMY.md` and `design-1.0.md`). The core rule (`design-2.0.md`, Project Philosophy): the generated city must sustain itself for N turns with no player before any player enters.
+
+**There are two codebases.**
+1. **Old: `D:\JAVA\Personal Projects\RAGGA_OLD_GRID_GEN`** (artifact `RaggaBackend`, 15 commits from 2026-01-22 to 2026-07-15, ~9,200 lines main + ~1,500 test). It holds all the design material: `design/design-2.0.md` (living doc and 12-step roadmap), the frozen `design-1.0.md`, two plan docs, and `GENERATION.md`, `PERSISTENCE.md` and `ECONOMY.md` in the packages. There is no README and no root `DESIGN.md` (it was renamed in `8c235c5`).
+2. **Current: `D:\JAVA\Personal Projects\ragga`** (package `be.magycks.ragga`, 2 commits: `8a41f76` on 2026-08-21 and `f539899` on 2026-10-14, ~830 lines). On 2026-07-30 generation was restarted as a graph (JGraphT: nodes are intersections, edges are streets) in a clean skeleton, with no code migrated. There is no README, design doc or roadmap. The untracked `docs/` holds a Q&A notes page (Q1–Q23). Both repos' `origin` is `github.com/GyselMax/Ragga`, and its `master` now holds the new repo.
+
+**Old repo: roadmap vs code (verified 2026-10-25)**
+
+| Step | Doc | Code |
+|---|---|---|
+| 1 Household/inhabitant JPA | Done | Done. The Known Gaps section still lists deleted classes (`PlayerBuilding`). |
+| 2 Grid generation + zoning | Done | Done. `GenerationRegressionTest` passes. |
+| 3 Building placement + economic bridge | In progress | All zones are bridged to `Building` subtypes, in **untracked** files. |
+| 4 Household generation + placement | In progress | Bidding-war housing market, income distribution and `Company` (cash + premises) exist, also **untracked**. |
+| 5–12 Inhabitants → player entry | Not started | Not started: nothing constructs an `Inhabitant`, and there is no job matching or turn loop. |
+
+**Gap:** the `economy`, `company` and `owner` packages and the reworked `Building` hierarchy were never committed. The working tree passes 57/57 tests. The committed HEAD `ae61f20` does **not compile** (110 errors). The committed `design-2.0.md` describes the uncommitted code as built, and GitHub no longer has the old history.
+
+**Current repo: what the code does**
+- Node generation (split-number clusters, BFS) and street generation (`growStreet`: no crossings, triangles or acute angles, degree ≤ 4) work. Seed 67 gives **326 nodes / 549 edges** in ~0.3 s (re-run on 2026-10-25). A code comment marks the edge code as "mostly by claude".
+- `CityConfig` (settings + seed packed into a 42-character city code) is committed but never called. `GraphGenerator` still reads `@Value` constants and hardcodes the starter node. The `CityConfig` test sits in `docs/examples/`, outside the build.
+- The quadtree (`generation/quadtree`) is staged but uncommitted. The records and `sealed QuadSquare` are written, `QuadTreeBuilder`'s `split`, `build`, `freeze` and `findWithin` are stubs, and nothing calls it yet.
+- `Node` is a JPA `@Entity`, but nothing is persisted, and `Node.degree` is never set. `GraphGenerator` is a `CommandLineRunner` that writes `graph.png` on every boot. The only test, `contextLoads`, needs a local MySQL. The comments in `application.properties` were copied from the old repo (`GridCell`, `update`), while the actual setting is `create-drop`.
+- None of roadmap steps 1–12 exists here yet. The rewrite is redoing step 2 on a graph.
+
+**Confirmed decisions.** Graph-based generation. `Node` is a class, not a record, so it has reference equality. Generation is deterministic per seed (one shared `Random`, fixed draw order, single thread). Settings travel as city codes. The quadtree is built, then frozen into sealed records, and stays in memory, while nodes and streets get persisted to MySQL (notes Q20). Carried over from the old design but not restated for the rewrite: ownership as a relationship (`Building.owner → Owner`), market-cleared housing values, and golden-seed regression tests. The developer writes the rewrite; the AI advises and writes reference code on the notes page.
+
+**Rejected scope.** Per the requester, crime and health systems are out. The docs only say "No illness system is required" (design-2.0.md), and crime is never mentioned. Also rejected: diagonal roads, wave function collapse (`f3c6b20`) and Voronoi (`df7a1b3`).
+
+**What comes next.** In the rewrite: finish the quadtree, wire it in (seed 67 must stay 326/549), then lot subdivision + zoning. The 3D engine is open (Godot client with a Java server, or jMonkeyEngine). The old roadmap's next steps were 5 (inhabitants), then 6 jobs, 7 turn loop, 8 income, 9 shops, 10 companies, 11 life events and 12 player entry. No document says which old steps the rewrite will rebuild, or in what order.
+</script>
+</section>
+
+<section class="s" id="method">
+  <p class="label s-tag">How this ran</p>
+  <h3>Four phases, two kinds of agent</h3>
+  <div class="process">
+    <div><p class="label">Phase 0</p><p><strong>Brief.</strong> The chair read both repos and git history, and verified facts by running code on copies.</p></div>
+    <div><p class="label">Phase 1</p><p><strong>Five advisors</strong> with the same brief, each answering alone, read-only.</p></div>
+    <div><p class="label">Phase 2</p><p><strong>Shuffle to A–E</strong>, then five fresh reviewers critique, rank and fact-check.</p></div>
+    <div><p class="label">Phase 3</p><p><strong>Chairman verdict</strong>, with the dissent kept.</p></div>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Check</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Old working tree, full test suite (on a copy)</td><td><span class="chip ok">57 / 57 pass</span></td></tr>
+        <tr><td>Old committed HEAD <code>ae61f20</code>, compiled from <code>git archive</code></td><td><span class="chip bad">110 errors</span></td></tr>
+        <tr><td>New <code>GraphGenerator</code>, seed 67, outside Spring</td><td><span class="chip ok">326 / 549 in 0.28 s</span></td></tr>
+        <tr><td>Blind-label shuffle</td><td>Fixed with <code>shuf</code> before any answer came back: A Outsider, B Expansionist, C Contrarian, D Assumption-Ripper, E Executor.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout warn">
+    <p class="label">Side effects, reported in full</p>
+    <p>The old repo's <code>contextLoads</code> test (run on the copy) connected to your local MySQL <code>RaggaDB</code> and ran two read-only <code>SELECT</code>s on <code>BuildingTemplate</code>. No schema or data changes were logged. One reviewer accidentally wrote a 3 KB file of file names to <code>%TEMP%\x</code>, and the chair deleted it. Nothing in either repo was changed.</p>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script>
+// renders the embedded answers and reviews (kept as their original markdown); falls back to plain text offline
+document.querySelectorAll('script[type="text/markdown"]').forEach(function (src) {
+  var text = src.textContent.replace(/^\n/, '');
+  var out;
+  if (window.marked && typeof window.marked.parse === 'function') {
+    out = document.createElement('div');
+    out.className = 'md';
+    out.innerHTML = window.marked.parse(text);
+    // lift each "Headline" heading + paragraph into the highlighted box
+    var h = out.querySelector('h3');
+    if (h && /^headline$/i.test(h.textContent.trim()) && h.nextElementSibling) {
+      var box = document.createElement('div');
+      box.className = 'headline';
+      box.innerHTML = '<p class="label">Headline</p>';
+      box.appendChild(h.nextElementSibling);
+      out.replaceChild(box, h);
+    }
+    out.querySelectorAll('table').forEach(function (t) {
+      var wrap = document.createElement('div');
+      wrap.className = 'tbl';
+      t.parentNode.insertBefore(wrap, t);
+      wrap.appendChild(t);
+    });
+  } else {
+    out = document.createElement('pre');
+    out.className = 'md-src';
+    out.textContent = text;
+  }
+  src.parentNode.insertBefore(out, src);
+});
+
+// marks the index entry of the section in view
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  if (!('IntersectionObserver' in window)) return;
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      links.forEach(function (a) { a.removeAttribute('aria-current'); });
+      var a = byId[e.target.id];
+      if (a) {
+        a.setAttribute('aria-current', 'true');
+        var d = a.closest('details');
+        if (d && !d.open) d.open = true;
+      }
+    });
+  }, { rootMargin: '-15% 0px -75% 0px' });
+  Object.keys(byId).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) io.observe(el);
+  });
+})();
+</script>
+</body>
+</html>

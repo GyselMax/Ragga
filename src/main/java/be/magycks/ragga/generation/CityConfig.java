@@ -48,6 +48,7 @@ public record CityConfig(
 
     // a starter node aka seed node — kept separate from Node because Node is a jpa entity with an id - just used for values in seed
     public record Starter(double x, double y, double splitNumber) {
+        // turns this starter into a fresh graph Node with the same x, y and splitNumber
         public Node toNode() {
             return new Node(x, y, splitNumber);
         }
@@ -201,29 +202,29 @@ public record CityConfig(
 
 
     /// HELPERS ///
-    // 4.2 -> 42, so one decimal fits in a whole number
+    // stores a one-decimal value as a whole number (4.2 -> 42), so it fits in a byte or short
     private static int tenths(double value) {
         return (int) Math.round(value * 10);
     }
 
-    // java bytes are signed (-128..127), the mask turns them back into 0..255
+    // reads one byte as 0..255 — java bytes are signed (-128..127), the mask fixes that
     private static int unsignedByte(ByteBuffer buffer) {
         return buffer.get() & 0xFF;
     }
 
-    // same for shorts: -32768..32767 back into 0..65535
+    // reads two bytes as 0..65535 — same mask trick as unsignedByte
     private static int unsignedShort(ByteBuffer buffer) {
         return buffer.getShort() & 0xFFFF;
     }
 
-    // low byte of a crc32 over the first `length` bytes — lets roughly 1 in 256 typos slip through
+    // one-byte fingerprint of the first `length` bytes (low byte of a crc32) — about 1 in 256 typos slip through
     private static byte checksum(byte[] bytes, int length) {
         CRC32 crc = new CRC32();
         crc.update(bytes, 0, length);
         return (byte) crc.getValue();
     }
 
-    // written as !(in range) so NaN fails too
+    // throws a readable error if value is outside min..max — written as !(in range) so NaN fails too
     private static void checkRange(String name, double value, double min, double max) {
         if (!(value >= min && value <= max)) {
             throw new IllegalArgumentException(name + " must be between " + min + " and " + max + ", got " + value);
