@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Crossing Search Walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Literata:ital,wght@0,400;0,600;1,400&family=Schibsted+Grotesk:wght@500;700;800&display=swap">
+<style>
+/* always dark: the dark palette of COUNCIL_REVIEW.html */
+:root {
+  --paper: #12171b;
+  --sheet: #182027;
+  --ink: #dde4e8;
+  --ink-soft: #9cabb5;
+  --rule: #2c3841;
+  --accent: #86bbe0;
+  --accent-soft: #1c3042;
+  --warn: #e0aa5c;
+  --warn-soft: #33281a;
+  --ok: #8fd0a2;
+  --ok-soft: #1f3d2a;
+  --bad: #f0a0a0;
+  --bad-soft: #45242a;
+  --code-bg: #1b232a;
+  color-scheme: dark;
+
+  --f-display: "Schibsted Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Literata", Georgia, "Times New Roman", serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Consolas, "Courier New", monospace;
+}
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: 17px; line-height: 1.62; }
+a { color: var(--accent); }
+code { font-family: var(--f-mono); font-size: .84em; background: var(--code-bg); padding: .08em .35em; border-radius: 4px; overflow-wrap: anywhere; }
+strong { font-weight: 600; }
+
+/* PAGE FRAME */
+.page { max-width: 80rem; margin: 0 auto; padding-inline: 24px; padding-block: 48px 96px; display: grid; grid-template-columns: 16.5rem minmax(0, 1fr); gap: 2.5rem 3.5rem; }
+@media (max-width: 880px) { .page { grid-template-columns: minmax(0, 1fr); padding-inline: 16px; padding-block: 28px 64px; gap: 2rem; } }
+.eyebrow, .label { font-family: var(--f-display); font-weight: 700; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; line-height: 1.3; margin: 0; }
+
+/* MASTHEAD */
+.masthead { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.5rem 2.5rem; align-items: end; padding-bottom: 2rem; border-bottom: 1px solid var(--rule); }
+.masthead-text { display: flex; flex-direction: column; gap: .7rem; min-width: 0; }
+.masthead .eyebrow { color: var(--accent); }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(2.2rem, 5.5vw, 3.5rem); line-height: 1.04; letter-spacing: -.025em; margin: 0; text-wrap: balance; }
+.lede { font-size: 1.12rem; color: var(--ink-soft); max-width: 60ch; margin: 0; }
+.meta { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-soft); margin: 0; }
+.badge { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .45rem; min-width: 15rem; }
+.badge > * { margin: 0; }
+.badge .label { color: var(--ink-soft); }
+.badge-word { font-family: var(--f-display); font-weight: 800; font-size: 2rem; line-height: 1.1; color: var(--ok); }
+.badge-row { display: flex; justify-content: space-between; align-items: center; gap: .8rem; font-family: var(--f-mono); font-size: 12.5px; }
+@media (max-width: 880px) { .masthead { grid-template-columns: minmax(0, 1fr); } .badge { min-width: 0; } }
+
+/* INDEX, in folders */
+.toc { position: sticky; top: 24px; align-self: start; display: flex; flex-direction: column; gap: .3rem; max-height: calc(100vh - 48px); overflow-y: auto; }
+.toc details > summary { display: flex; align-items: center; gap: .5rem; padding: .5rem .6rem; border-radius: 6px; cursor: pointer; list-style: none; font-family: var(--f-display); font-weight: 700; font-size: 14px; }
+.toc details > summary::-webkit-details-marker { display: none; }
+.toc details > summary::before { content: "▸"; width: .8rem; font-size: 11px; color: var(--ink-soft); transition: transform .15s; }
+.toc details[open] > summary::before { transform: rotate(90deg); }
+.toc details > summary:hover { background: var(--accent-soft); }
+.toc details > summary:focus-visible, .toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toc-n { margin-left: auto; font-family: var(--f-mono); font-size: 11.5px; font-weight: 600; color: var(--ink-soft); }
+.toc ol { list-style: none; margin: 0; padding: 0 0 .35rem .55rem; display: flex; flex-direction: column; gap: 2px; }
+.toc a { display: block; padding: .42rem .6rem; border-radius: 6px; color: var(--ink-soft); text-decoration: none; font-family: var(--f-display); font-weight: 500; font-size: 14px; line-height: 1.35; }
+.toc a:hover, .toc a[aria-current="true"] { background: var(--accent-soft); color: var(--ink); }
+@media (max-width: 880px) { .toc { position: static; max-height: none; } }
+@media (prefers-reduced-motion: reduce) { .toc details > summary::before { transition: none; } }
+
+/* SECTIONS */
+main { min-width: 0; display: flex; flex-direction: column; gap: 4rem; container-type: inline-size; }
+section.s { display: flex; flex-direction: column; gap: 1.15rem; scroll-margin-top: 24px; min-width: 0; }
+section.s > * { margin: 0; }
+section.s + section.s { padding-top: 3.2rem; border-top: 1px solid var(--rule); }
+.s-tag { color: var(--accent); }
+section.s h3 { font-family: var(--f-display); font-weight: 700; font-size: clamp(1.4rem, 3vw, 1.9rem); line-height: 1.17; letter-spacing: -.012em; max-width: 32ch; text-wrap: balance; }
+section.s p, section.s li { max-width: 70ch; }
+.soft { color: var(--ink-soft); }
+
+/* CALLOUTS */
+.callout { border-radius: 8px; padding: .95rem 1.15rem; display: flex; flex-direction: column; gap: .35rem; max-width: 76ch; }
+.callout > * { margin: 0; }
+.callout.warn { background: var(--warn-soft); }
+.callout.warn .label { color: var(--warn); }
+.callout.info { background: var(--accent-soft); }
+.callout.info .label { color: var(--accent); }
+
+/* PANELS */
+.dual { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+@container (max-width: 46rem) { .dual { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 1.1rem 1.2rem 1.2rem; display: flex; flex-direction: column; gap: .7rem; min-width: 0; }
+.panel > * { margin: 0; }
+.panel .label { color: var(--ink-soft); }
+.panel.bad { border-top: 4px solid var(--bad); }
+.panel.bad .label { color: var(--bad); }
+.panel.ok { border-top: 4px solid var(--ok); }
+.panel.ok .label { color: var(--ok); }
+.stack { display: flex; flex-direction: column; gap: .8rem; max-width: 52rem; }
+
+/* CODE */
+pre { margin: 0; font-family: var(--f-mono); font-size: 12.5px; line-height: 1.6; background: var(--code-bg); border-radius: 6px; padding: .7rem .85rem; overflow-x: auto; }
+pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+.hl-bad { background: var(--bad-soft); color: var(--bad); border-radius: 3px; padding: 0 .15em; }
+.hl-ok { background: var(--ok-soft); color: var(--ok); border-radius: 3px; padding: 0 .15em; }
+.cm { color: var(--ink-soft); }
+
+/* TABLES */
+.tbl { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; line-height: 1.5; }
+th, td { text-align: left; padding: .6rem .9rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-family: var(--f-display); font-weight: 700; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper); white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+td.topic { font-family: var(--f-display); font-weight: 700; font-size: .95rem; min-width: 8rem; }
+
+/* CHIPS */
+.chip { display: inline-block; font-family: var(--f-display); font-weight: 700; font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; padding: .18em .6em; border-radius: 99px; white-space: nowrap; line-height: 1.5; }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.info { background: var(--accent-soft); color: var(--accent); }
+.chip.mute { background: var(--code-bg); color: var(--ink-soft); }
+
+/* DIAGRAM */
+.figure { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem 1.2rem; display: grid; grid-template-columns: minmax(0, 23rem) minmax(0, 1fr); gap: 1rem 1.6rem; align-items: center; }
+.figure > * { margin: 0; }
+.figure svg { width: 100%; max-width: 22rem; height: auto; display: block; margin-inline: auto; }
+@container (max-width: 44rem) { .figure { grid-template-columns: minmax(0, 1fr); } }
+.proof { list-style: none; counter-reset: p; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .55rem; font-size: .96rem; }
+.proof li { counter-increment: p; display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: .5rem; }
+.proof li::before { content: counter(p); font: 600 12px/1.6rem var(--f-mono); color: var(--accent); }
+
+/* WATERFALL */
+.wf { display: grid; grid-template-columns: minmax(0, 17rem) minmax(0, 1fr) 4.8rem; gap: .6rem .9rem; align-items: center; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem 1.2rem; }
+.wf > * { margin: 0; }
+.wf .lab { font-family: var(--f-display); font-weight: 600; font-size: 14px; line-height: 1.3; }
+.wf .track { height: .8rem; background: var(--code-bg); border-radius: 99px; overflow: hidden; }
+.wf .track span { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
+.wf .track span.base { background: var(--ink-soft); }
+.wf .track span.off { background: var(--warn); }
+.wf .val { font-family: var(--f-mono); font-size: 12.5px; font-weight: 600; text-align: right; white-space: nowrap; }
+@container (max-width: 34rem) { .wf { grid-template-columns: minmax(0, 1fr) 4.8rem; } .wf .lab { grid-column: 1 / -1; margin-bottom: -.3rem; } }
+
+/* NUMBERED STEPS */
+.steps { list-style: none; counter-reset: step; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1.1rem; max-width: 52rem; }
+.steps > li { counter-increment: step; display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: .8rem; }
+.steps > li::before { content: counter(step); width: 1.85rem; height: 1.85rem; border-radius: 50%; background: var(--accent); color: var(--paper); font: 600 13px/1.85rem var(--f-mono); text-align: center; }
+.steps .step-body { display: flex; flex-direction: column; gap: .45rem; min-width: 0; }
+.steps .step-body > * { margin: 0; }
+.steps h4 { font-family: var(--f-display); font-size: 1.08rem; font-weight: 700; line-height: 1.35; display: flex; flex-wrap: wrap; gap: .3rem .6rem; align-items: baseline; }
+.where { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="masthead">
+  <div class="masthead-text">
+    <p class="eyebrow">Walkthrough · change 1 · 2026-11-03</p>
+    <h1>Search for crossings once per street step</h1>
+    <p class="lede">Every candidate in a step repeats the same 240 search around <code>current</code>. Do that search once, the first time a candidate needs it, and keep each street only once. Same city, 42% faster at 11,106 nodes.</p>
+    <p class="meta">builds on the Q21 wiring · plain geometry, no JGraphT tricks · measured on a copy of GraphGenerator</p>
+  </div>
+  <div class="badge" aria-label="Run time down 42 percent at 11,106 nodes">
+    <p class="label">11,106 nodes</p>
+    <p class="badge-word">−42%</p>
+    <p class="badge-row"><span>Q21 wiring</span><span>1,043 ms</span></p>
+    <p class="badge-row"><span>with change 1</span><span>605 ms</span></p>
+    <p class="badge-row"><span>same city</span><span class="chip ok">yes</span></p>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <details open>
+    <summary>Change 1 <span class="toc-n">5</span></summary>
+    <ol>
+      <li><a href="#problem">What happens now</a></li>
+      <li><a href="#safe">Why it's safe</a></li>
+      <li><a href="#build">How to build it</a></li>
+      <li><a href="#worth">What each part is worth</a></li>
+      <li><a href="#check">How to check it</a></li>
+    </ol>
+  </details>
+</nav>
+
+<main>
+
+<section class="s" id="problem">
+  <p class="label s-tag">What happens now</p>
+  <h3>One street step, the same search over and over</h3>
+  <p>With the Q21 wiring, a step looks at every node within 120 of <code>current</code>. Each candidate that passes the cheap checks (degree, duplicate, triangle, angle) reaches <code>isCrossingFree</code>, and that method searches 240 around <code>current</code> again.</p>
+  <div class="panel bad">
+    <p class="label">Q21 wiring: runs again for every candidate</p>
+<pre><code><span class="cm">// growStreet: for every candidate within 120 …</span>
+if (!passesEdgeConstraints(graph, tree, current, candidate)) continue;
+
+<span class="cm">// isCrossingFree(graph, tree, a, b): … a is always current</span>
+for (Node node : <span class="hl-bad">tree.findWithin(a.getX(), a.getY(),</span>
+                 <span class="hl-bad">                2 * EDGE_SEARCH_RADIUS)</span>) {
+    for (DefaultEdge edge : graph.edgesOf(node)) {
+        <span class="cm">// test a→b against the street</span>
+    }
+}</code></pre>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Per street step</th><th>Q21 wiring</th><th>Change 1</th></tr></thead>
+      <tbody>
+        <tr><td class="topic">240 searches</td><td>one per candidate that gets that far</td><td>at most one</td></tr>
+        <tr><td class="topic">Each nearby street tested</td><td>up to twice per candidate, once from each end</td><td>once per candidate</td></tr>
+        <tr><td class="topic">Whole city, 11,106 nodes</td><td>283,472 searches · 9.4 M street tests</td><td>163,023 searches · 4.8 M street tests</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="s" id="safe">
+  <p class="label s-tag">Why it's safe</p>
+  <h3>The answer doesn't depend on the candidate</h3>
+  <p>Two facts make one list per step enough:</p>
+  <ul>
+    <li><strong>The search circle sits around <code>a</code> only.</strong> The candidate <code>b</code> is used only in the line test itself, never to choose which streets to look at.</li>
+    <li><strong>Nothing changes during a step.</strong> <code>graph.addEdge</code> runs after the candidate loop, so every candidate sees the same streets.</li>
+  </ul>
+  <div class="figure">
+    <svg viewBox="0 0 360 290" role="img" aria-label="A new street a to b crossing an existing street c to d at point P, inside the 240 circle around a">
+      <circle cx="150" cy="150" r="130" style="fill: var(--accent-soft); stroke: var(--accent); stroke-dasharray: 5 4; stroke-width: 1.5"/>
+      <circle cx="150" cy="150" r="65" style="fill: none; stroke: var(--ink-soft); stroke-dasharray: 3 4; stroke-width: 1"/>
+      <line x1="150" y1="150" x2="205" y2="120" style="stroke: var(--accent); stroke-width: 3.5; stroke-linecap: round"/>
+      <line x1="165" y1="95" x2="190" y2="150" style="stroke: var(--warn); stroke-width: 3; stroke-linecap: round"/>
+      <line x1="300" y1="226" x2="336" y2="256" style="stroke: var(--ink-soft); stroke-width: 3; stroke-linecap: round"/>
+      <circle cx="182" cy="132.5" r="5" style="fill: var(--bad)"/>
+      <circle cx="150" cy="150" r="4.5" style="fill: var(--ink)"/>
+      <circle cx="205" cy="120" r="4.5" style="fill: var(--ink)"/>
+      <circle cx="165" cy="95" r="4" style="fill: var(--warn)"/>
+      <circle cx="190" cy="150" r="4" style="fill: var(--warn)"/>
+      <g style="font-family: var(--f-mono); font-size: 13px; font-weight: 600">
+        <text x="136" y="166" style="fill: var(--ink)">a</text>
+        <text x="212" y="118" style="fill: var(--ink)">b</text>
+        <text x="152" y="90" style="fill: var(--warn)">c</text>
+        <text x="194" y="166" style="fill: var(--warn)">d</text>
+        <text x="188" y="135" style="fill: var(--bad)">P</text>
+      </g>
+      <g style="font-family: var(--f-display); font-size: 11.5px">
+        <text x="92" y="240" style="fill: var(--accent)">240 around a</text>
+        <text x="104" y="76" style="fill: var(--ink-soft)">120</text>
+        <text x="262" y="281" style="fill: var(--ink-soft)">too far to cross</text>
+      </g>
+    </svg>
+    <ol class="proof">
+      <li><span>Every street is at most 120 long, because <code>growStreet</code> only steps to nodes within <code>EDGE_SEARCH_RADIUS</code>. The new street <code>a→b</code> is too.</span></li>
+      <li><span>If <code>c–d</code> crosses <code>a→b</code> at <code>P</code>, then <code>P</code> lies on both streets: |aP| ≤ 120, |cP| ≤ 120 and |dP| ≤ 120.</span></li>
+      <li><span>So |ac| ≤ |aP| + |Pc| ≤ 240, and the same for <code>d</code>. <strong>Both ends</strong> of any street that could cross are inside the circle.</span></li>
+      <li><span>Each such street turns up from both its ends, so taking it only from one end loses nothing.</span></li>
+    </ol>
+  </div>
+  <div class="callout warn">
+    <p class="label">Keep the radius tied to the street length</p>
+    <p>Write the radius as <code>2 * EDGE_SEARCH_RADIUS</code>, not 240. If streets ever get longer than the search radius (for example, roads added later for lots), the radius becomes <code>EDGE_SEARCH_RADIUS</code> plus the longest street.</p>
+  </div>
+</section>
+
+<section class="s" id="build">
+  <p class="label s-tag">How to build it</p>
+  <h3>Four steps, once the Q21 wiring is in</h3>
+  <ol class="steps">
+    <li><div class="step-body">
+      <h4>Split the crossing check off the other constraints</h4>
+      <p class="where">passesEdgeConstraints</p>
+      <p>Keep degree, duplicate, triangle and angle together (for example as <code>passesCheapConstraints</code>), and call the crossing check separately from <code>growStreet</code>. The crossing check stays last, so it still runs only for candidates that pass everything else.</p>
+    </div></li>
+    <li><div class="step-body">
+      <h4>One list per step, filled on first need</h4>
+      <p class="where">growStreet, inside <code>while (true)</code></p>
+<pre><code>List&lt;DefaultEdge&gt; nearbyStreets = null;   <span class="cm">// new for every step</span>
+for (Node candidate : tree.findWithin(current.getX(), current.getY(),
+                                      EDGE_SEARCH_RADIUS)) {
+    if (candidate == current) continue;
+    if (!passesCheapConstraints(graph, current, candidate)) continue;
+    <span class="hl-ok">if (nearbyStreets == null)</span>
+        <span class="hl-ok">nearbyStreets = findNearbyStreets(graph, tree, current);</span>
+    if (!isCrossingFree(nearbyStreets, graph, current, candidate))
+        continue;
+    <span class="cm">// … scoring unchanged</span>
+}</code></pre>
+      <p class="soft">Use a local variable, not a field: <code>GraphGenerator</code> is a Spring singleton, and a local can't leak from one step into the next.</p>
+    </div></li>
+    <li><div class="step-body">
+      <h4>Collect the nearby streets, each once</h4>
+      <p class="where">new: findNearbyStreets(graph, tree, a)</p>
+      <p>Search <code>2 * EDGE_SEARCH_RADIUS</code> around <code>a</code>, loop <code>graph.edgesOf(node)</code> for every node found, and keep a street only when <code>node == graph.getEdgeSource(edge)</code>. That's the "take it from one end" rule from the proof.</p>
+    </div></li>
+    <li><div class="step-body">
+      <h4>Test against the list</h4>
+      <p class="where">isCrossingFree(streets, graph, a, b)</p>
+      <p>The same body as today, but it loops over the given list instead of <code>graph.edgeSet()</code>. It still skips streets that share an end with <code>a</code> or <code>b</code>, and still uses <code>Line2D.linesIntersect</code>.</p>
+    </div></li>
+  </ol>
+</section>
+
+<section class="s" id="worth">
+  <p class="label s-tag">What each part is worth</p>
+  <h3>Searching once does most of it; searching lazily matters too</h3>
+  <div class="wf" role="img" aria-label="Run time at 11,106 nodes for each part of change 1">
+    <p class="lab">Q21 wiring</p><div class="track"><span class="base" style="width:100%"></span></div><p class="val">1,043 ms</p>
+    <p class="lab">+ search once per step</p><div class="track"><span style="width:66.2%"></span></div><p class="val">691 ms</p>
+    <p class="lab">+ each street once</p><div class="track"><span style="width:58%"></span></div><p class="val">605 ms</p>
+    <p class="lab">same, but search at every step's start</p><div class="track"><span class="off" style="width:73%"></span></div><p class="val">761 ms</p>
+  </div>
+  <p class="soft">36 starters, median of 5 runs, the same city in every row. At seed 67 the same steps go 24.9 → 15.8 → 13.3 ms.</p>
+  <p>The last bar is why the list is filled on first need. Many steps end before any candidate reaches the crossing check, for example when <code>current</code> already has four streets. Searching at the start of every step does that work anyway and is 26% slower.</p>
+</section>
+
+<section class="s" id="check">
+  <p class="label s-tag">How to check it</p>
+  <h3>Same seed, same streets, in the same order</h3>
+  <ul>
+    <li>Seed 67 must still give <strong>326 nodes and 549 streets</strong>.</li>
+    <li>Counts can match by luck, so compare the streets too: write every street's two end coordinates in <code>graph.edgeSet()</code> order to a file before and after the change, and diff the two files.</li>
+  </ul>
+  <div class="callout info">
+    <p class="label">On JGraphT</p>
+    <p>Change 1 is plain geometry and works with any graph library, which is why it's first. Changes 2–4 are parked, since they're about JGraphT. One correction: JGraphT doesn't draw <code>graph.png</code>. <code>drawGraph</code> does that with Java2D, and JGraphT is the data structure holding the nodes and streets. If it stays as that, change 4 (<code>SimpleGraph</code>) is still a free 11–14%.</p>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+// marks the index entry of the section in view
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  if (!('IntersectionObserver' in window)) return;
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      links.forEach(function (a) { a.removeAttribute('aria-current'); });
+      var a = byId[e.target.id];
+      if (a) a.setAttribute('aria-current', 'true');
+    });
+  }, { rootMargin: '-15% 0px -75% 0px' });
+  Object.keys(byId).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) io.observe(el);
+  });
+})();
+</script>
+</body>
+</html>

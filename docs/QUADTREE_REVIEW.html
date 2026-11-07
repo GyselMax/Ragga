@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ragga Quadtree Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Literata:ital,wght@0,400;0,600;1,400&family=Schibsted+Grotesk:wght@500;700;800&display=swap">
+<style>
+/* same visual language as COUNCIL_REVIEW.html: folders on the left, one reading column on the right */
+/* always dark: the dark palette of COUNCIL_REVIEW.html */
+:root {
+  --paper: #12171b;
+  --sheet: #182027;
+  --ink: #dde4e8;
+  --ink-soft: #9cabb5;
+  --rule: #2c3841;
+  --accent: #86bbe0;
+  --accent-soft: #1c3042;
+  --warn: #e0aa5c;
+  --warn-soft: #33281a;
+  --ok: #8fd0a2;
+  --ok-soft: #1f3d2a;
+  --bad: #f0a0a0;
+  --bad-soft: #45242a;
+  --code-bg: #1b232a;
+  color-scheme: dark;
+
+  --f-display: "Schibsted Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Literata", Georgia, "Times New Roman", serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Consolas, "Courier New", monospace;
+}
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 17px;
+  line-height: 1.62;
+}
+a { color: var(--accent); }
+code {
+  font-family: var(--f-mono);
+  font-size: .84em;
+  background: var(--code-bg);
+  padding: .08em .35em;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+strong { font-weight: 600; }
+
+/* PAGE FRAME */
+.page {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding-inline: 24px;
+  padding-block: 48px 96px;
+  display: grid;
+  grid-template-columns: 16.5rem minmax(0, 1fr);
+  gap: 2.5rem 3.5rem;
+}
+@media (max-width: 880px) {
+  .page { grid-template-columns: minmax(0, 1fr); padding-inline: 16px; padding-block: 28px 64px; gap: 2rem; }
+}
+.eyebrow, .label {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  margin: 0;
+}
+
+/* MASTHEAD */
+.masthead {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.5rem 2.5rem;
+  align-items: end;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--rule);
+}
+.masthead-text { display: flex; flex-direction: column; gap: .7rem; min-width: 0; }
+.masthead .eyebrow { color: var(--accent); }
+h1 {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-size: clamp(2.2rem, 5.5vw, 3.5rem);
+  line-height: 1.04;
+  letter-spacing: -.025em;
+  margin: 0;
+  text-wrap: balance;
+}
+.lede { font-size: 1.12rem; color: var(--ink-soft); max-width: 60ch; margin: 0; }
+.meta { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-soft); margin: 0; }
+.badge {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+  min-width: 15rem;
+}
+.badge > * { margin: 0; }
+.badge .label { color: var(--ink-soft); }
+.badge-word { font-family: var(--f-display); font-weight: 800; font-size: 2rem; line-height: 1.1; color: var(--bad); }
+.badge-row { display: flex; justify-content: space-between; align-items: center; gap: .8rem; font-family: var(--f-mono); font-size: 12.5px; }
+@media (max-width: 880px) { .masthead { grid-template-columns: minmax(0, 1fr); } .badge { min-width: 0; } }
+
+/* INDEX, in folders */
+.toc {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+.toc details > summary {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 14px;
+}
+.toc details > summary::-webkit-details-marker { display: none; }
+.toc details > summary::before { content: "▸"; width: .8rem; font-size: 11px; color: var(--ink-soft); transition: transform .15s; }
+.toc details[open] > summary::before { transform: rotate(90deg); }
+.toc details > summary:hover { background: var(--accent-soft); }
+.toc details > summary:focus-visible, .toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toc-n { margin-left: auto; font-family: var(--f-mono); font-size: 11.5px; font-weight: 600; color: var(--ink-soft); }
+.toc ol { list-style: none; margin: 0; padding: 0 0 .35rem .55rem; display: flex; flex-direction: column; gap: 2px; }
+.toc a {
+  display: block;
+  padding: .42rem .6rem;
+  border-radius: 6px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-family: var(--f-display);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.toc a:hover, .toc a[aria-current="true"] { background: var(--accent-soft); color: var(--ink); }
+@media (max-width: 880px) { .toc { position: static; max-height: none; } }
+@media (prefers-reduced-motion: reduce) { .toc details > summary::before { transition: none; } }
+
+/* SECTIONS */
+main { min-width: 0; display: flex; flex-direction: column; gap: 4rem; container-type: inline-size; }
+.part-head { display: flex; flex-direction: column; gap: .4rem; padding-top: 1rem; border-top: 3px solid var(--ink); }
+.part-head .eyebrow { color: var(--ink-soft); }
+.part-head h2 { font-family: var(--f-display); font-weight: 800; font-size: clamp(1.7rem, 3.6vw, 2.4rem); line-height: 1.1; margin: 0; letter-spacing: -.015em; }
+section.s { display: flex; flex-direction: column; gap: 1.15rem; scroll-margin-top: 24px; min-width: 0; }
+section.s > * { margin: 0; }
+section.s + section.s { padding-top: 3.2rem; border-top: 1px solid var(--rule); }
+.s-tag { color: var(--accent); }
+section.s h3 {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  line-height: 1.17;
+  letter-spacing: -.012em;
+  max-width: 32ch;
+  text-wrap: balance;
+}
+section.s p, section.s li { max-width: 70ch; }
+.soft { color: var(--ink-soft); }
+
+/* CALLOUTS */
+.callout { border-radius: 8px; padding: .95rem 1.15rem; display: flex; flex-direction: column; gap: .35rem; max-width: 76ch; }
+.callout > * { margin: 0; }
+.callout.warn { background: var(--warn-soft); }
+.callout.warn .label { color: var(--warn); }
+.callout.info { background: var(--accent-soft); }
+.callout.info .label { color: var(--accent); }
+
+/* TWO PANELS SIDE BY SIDE */
+.dual { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+@container (max-width: 46rem) { .dual { grid-template-columns: minmax(0, 1fr); } }
+.dual.stack { grid-template-columns: minmax(0, 1fr); gap: .6rem; max-width: 46rem; }
+.panel {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 1.1rem 1.2rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: .7rem;
+  min-width: 0;
+}
+.panel > * { margin: 0; }
+.panel .label { color: var(--ink-soft); }
+.panel.bad { border-top: 4px solid var(--bad); }
+.panel.bad .label { color: var(--bad); }
+.panel.ok { border-top: 4px solid var(--ok); }
+.panel.ok .label { color: var(--ok); }
+
+/* CODE */
+pre {
+  margin: 0;
+  font-family: var(--f-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  background: var(--code-bg);
+  border-radius: 6px;
+  padding: .7rem .85rem;
+  overflow-x: auto;
+}
+pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+.hl-bad { background: var(--bad-soft); color: var(--bad); border-radius: 3px; padding: 0 .15em; font-weight: 600; }
+.hl-ok { background: var(--ok-soft); color: var(--ok); border-radius: 3px; padding: 0 .15em; font-weight: 600; }
+
+/* BUG CARDS */
+.bug { display: flex; flex-direction: column; gap: .8rem; }
+.bug > * { margin: 0; }
+.bug h4 { font-family: var(--f-display); font-size: 1.2rem; font-weight: 700; line-height: 1.3; display: flex; flex-wrap: wrap; gap: .3rem .6rem; align-items: baseline; }
+.bug + .bug { padding-top: 1.6rem; border-top: 1px dashed var(--rule); }
+.where { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-soft); }
+
+/* TABLES */
+.tbl { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; line-height: 1.5; }
+th, td { text-align: left; padding: .6rem .9rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: var(--paper);
+  white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: 0; }
+td.topic { font-family: var(--f-display); font-weight: 700; font-size: .95rem; min-width: 9rem; }
+td.loc { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-soft); width: 12rem; overflow-wrap: anywhere; }
+.wide-tbl table { min-width: 34rem; }
+
+/* CHIPS */
+.chip {
+  display: inline-block;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: .18em .6em;
+  border-radius: 99px;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.info { background: var(--accent-soft); color: var(--accent); }
+.chip.mute { background: var(--code-bg); color: var(--ink-soft); }
+.facts { display: flex; flex-wrap: wrap; gap: .4rem; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="masthead">
+  <div class="masthead-text">
+    <p class="eyebrow">Quadtree review · 2026-11-03</p>
+    <h1>Compiles, but the builder's search is broken</h1>
+    <p class="lede">The frozen <code>QuadTree</code> passes every check. <code>QuadTreeBuilder.collectWithin</code> misses nodes on about half of all searches. Fixing two lines makes all 96,443 checks pass.</p>
+    <p class="meta">reviewed: generation/quadtree (6 files) · JDK 25.0.1 · no project files changed</p>
+  </div>
+  <div class="badge" aria-label="Verdict: not working yet">
+    <p class="label">Verdict</p>
+    <p class="badge-word">Not yet</p>
+    <p class="badge-row"><span>QuadTree</span><span class="chip ok">correct</span></p>
+    <p class="badge-row"><span>QuadTreeBuilder</span><span class="chip bad">search broken</span></p>
+    <p class="badge-row"><span>Compile</span><span class="chip ok">clean</span></p>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <details open>
+    <summary>Review <span class="toc-n">3</span></summary>
+    <ol>
+      <li><a href="#bugs">Real bugs</a></li>
+      <li><a href="#worth">Worth changing</a></li>
+      <li><a href="#style">Style notes</a></li>
+    </ol>
+  </details>
+  <details open>
+    <summary>Checks <span class="toc-n">3</span></summary>
+    <ol>
+      <li><a href="#recheck">Earlier review points</a></li>
+      <li><a href="#tests">Test results</a></li>
+      <li><a href="#setup">Setup notes</a></li>
+    </ol>
+  </details>
+</nav>
+
+<main>
+
+<!-- ============ REVIEW ============ -->
+<div class="part-head">
+  <p class="eyebrow">Part 1</p>
+  <h2>Review</h2>
+</div>
+
+<section class="s" id="bugs">
+  <p class="label s-tag">Real bugs</p>
+  <h3>Two bugs, one of them already breaks searches</h3>
+
+  <div class="bug">
+    <h4>1 · The builder's skip test compares the circle with itself <span class="chip bad">breaks search</span></h4>
+    <p class="where">QuadTreeBuilder.java:39–40</p>
+    <p>The parameters <code>x, y</code> hide the fields <code>x, y</code>, so every <code>x</code> here is the circle's centre. <code>dx</code> is always 0, and line 40 checks <code>y</code> against the x edges. Whole squares get skipped even though they hold matching nodes.</p>
+    <div class="dual stack">
+      <div class="panel bad">
+        <p class="label">Now</p>
+<pre><code>double dx = x - Math.clamp(x, <span class="hl-bad">x</span>, <span class="hl-bad">x</span> + size);
+double dy = y - Math.clamp(y, <span class="hl-bad">x</span>, <span class="hl-bad">x</span> + size);</code></pre>
+      </div>
+      <div class="panel ok">
+        <p class="label">Fix</p>
+<pre><code>double dx = x - Math.clamp(x, <span class="hl-ok">this.x</span>, <span class="hl-ok">this.x</span> + size);
+double dy = y - Math.clamp(y, <span class="hl-ok">this.y</span>, <span class="hl-ok">this.y</span> + size);</code></pre>
+      </div>
+    </div>
+    <div class="facts">
+      <span class="chip bad">wrong on ~50% of searches</span>
+      <span class="chip bad">circle (1372, 45) r 266: 16 nodes expected, 0 found</span>
+      <span class="chip bad">seed 67 with this builder: &gt;20,000 nodes instead of 326</span>
+    </div>
+  </div>
+
+  <div class="bug">
+    <h4>2 · <code>QuadTree</code> still has no <code>findWithin</code> <span class="chip warn">blocks wiring</span></h4>
+    <p class="where">QuadTree.java:15</p>
+    <p>The planned <code>growStreet</code> and <code>isCrossingFree</code> call <code>tree.findWithin(…)</code>, so they won't compile until it exists. Nothing breaks today. Your <code>QuadSquare</code> already has a default <code>findWithin</code>, so the body can pass the call on to <code>root</code>.</p>
+  </div>
+</section>
+
+<section class="s" id="worth">
+  <p class="label s-tag">Worth changing</p>
+  <h3>Three things that aren't broken today</h3>
+
+  <div class="bug">
+    <h4>Nodes outside the root square are silently lost <span class="chip warn">latent</span></h4>
+    <p class="where">QuadTreeBuilder.java:20</p>
+    <p><code>insert</code> doesn't check bounds, so such a node lands in an edge child and every search skips it. Tested: (-10, -10) in a 0..100 tree isn't found at its own position. Safe today because <code>isWithinBounds</code> runs first.</p>
+    <p><strong>Suggestion:</strong> throw an exception for such nodes, or state the rule in the comment.</p>
+  </div>
+
+  <div class="bug">
+    <h4>The fields share their names with the circle centre <span class="chip warn">caused bug 1</span></h4>
+    <p class="where">QuadTreeBuilder.java:9</p>
+    <p>In the records the corner is <code>x()</code>, so the names can't clash. In the builder a bare <code>x</code> means the parameter.</p>
+    <p><strong>Suggestion:</strong> rename them to <code>minX, minY</code> as Q21 does, or write <code>this.</code> wherever a method also has x/y parameters.</p>
+  </div>
+
+  <div class="bug">
+    <h4>The exception has no <code>serialVersionUID</code> <span class="chip mute">lint only</span></h4>
+    <p class="where">BranchDoesNotHave4ChildrenException.java:3</p>
+    <p>The only <code>-Xlint:all</code> warning in the package. Harmless.</p>
+    <p><strong>Suggestion:</strong> a wrong child count is a bad argument, so extending <code>IllegalArgumentException</code> would also fit.</p>
+  </div>
+</section>
+
+<section class="s" id="style">
+  <p class="label s-tag">Style notes</p>
+  <h3>Small things against your own style</h3>
+  <div class="tbl wide-tbl">
+    <table>
+      <thead><tr><th>Where</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td class="loc">QuadTreeBuilder.java:89</td><td><code>ChildWithNode</code> → <code>childWithNode</code>, with the calls at lines 22 and 84.</td></tr>
+        <tr><td class="loc">Branch.java:17</td><td>The <code>nodeCount</code> comment is a copy of the <code>collectWithin</code> one.</td></tr>
+        <tr><td class="loc">QuadSquare.java:22</td><td><code>default public</code> → <code>default</code>. Interface methods are already public.</td></tr>
+        <tr><td class="loc">QuadTreeBuilder.java:9</td><td>“the left corner coordinates”: it's the top-left corner, and <code>size</code> isn't a coordinate.</td></tr>
+        <tr><td class="loc">QuadTreeBuilder.java:43</td><td>“if the QuadSquare is a branch”: the builder isn't a <code>QuadSquare</code>. It checks whether this square was split.</td></tr>
+        <tr><td class="loc">QuadTreeBuilder.java:21, 82, 95</td><td>Whitespace: <code>){</code> (elsewhere <code>) {</code>), <code>half),new</code>, and no newline at the end of the file.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ CHECKS ============ -->
+<div class="part-head">
+  <p class="eyebrow">Part 2</p>
+  <h2>Checks</h2>
+</div>
+
+<section class="s" id="recheck">
+  <p class="label s-tag">Earlier review points</p>
+  <h3>Six of seven still need work</h3>
+  <div class="tbl wide-tbl">
+    <table>
+      <thead><tr><th>Earlier point</th><th>Now</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="topic">Builder methods were placeholders</td><td>All five are written. <code>split</code>, <code>findWithin</code>, <code>build</code> and <code>freeze</code> are correct.</td><td><span class="chip warn">1 of 5 wrong</span></td></tr>
+        <tr><td class="topic">The builder needs its own circle/square test</td><td>It's there, but it reads the wrong <code>x</code> and <code>y</code> (bug 1).</td><td><span class="chip bad">wrong</span></td></tr>
+        <tr><td class="topic">An empty <code>findWithin</code> fools <code>isFarEnough</code></td><td>Same danger in another form: missed nodes let too-close candidates through.</td><td><span class="chip bad">still there</span></td></tr>
+        <tr><td class="topic"><code>QuadTree</code> has no <code>findWithin</code></td><td>Still missing (bug 2).</td><td><span class="chip bad">open</span></td></tr>
+        <tr><td class="topic"><code>ChildWithNode</code> starts with a capital</td><td>Unchanged.</td><td><span class="chip bad">open</span></td></tr>
+        <tr><td class="topic"><code>Branch.nodeCount</code> comment is a copy</td><td>Unchanged.</td><td><span class="chip bad">open</span></td></tr>
+        <tr><td class="topic">x/y in Leaf, Branch, QuadSquare</td><td>Every use is right: the parameters are the centre, <code>x()</code>/<code>y()</code> are the corner.</td><td><span class="chip ok">correct</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="s" id="tests">
+  <p class="label s-tag">Test results</p>
+  <h3>Your code, and a scratch copy with the fix</h3>
+  <p class="soft">4 node sets (300 to 2,245 nodes, with clusters, 20 nodes on one point, and nodes on edges and split lines) and 18,000 random circles, each compared with a plain loop over all nodes.</p>
+  <div class="tbl wide-tbl">
+    <table>
+      <thead><tr><th>Check</th><th>Your code</th><th>With fix 1</th></tr></thead>
+      <tbody>
+        <tr><td><code>mvnw compile</code>, and <code>-Xlint:all</code> on the package</td><td><span class="chip ok">1 warning</span></td><td><span class="chip ok">1 warning</span></td></tr>
+        <tr><td>Builder <code>findWithin</code> / <code>collectWithin</code> = loop</td><td><span class="chip bad">9,832 fails</span></td><td><span class="chip ok">pass</span></td></tr>
+        <tr><td>Tree <code>collectWithin</code> and <code>root().findWithin</code> = loop</td><td><span class="chip ok">pass</span></td><td><span class="chip ok">pass</span></td></tr>
+        <tr><td>Builder and tree return the same order</td><td><span class="chip mute">n/a</span></td><td><span class="chip ok">pass</span></td></tr>
+        <tr><td><code>nodeCount</code> matches, each node in exactly one leaf</td><td><span class="chip ok">pass</span></td><td><span class="chip ok">pass</span></td></tr>
+        <tr><td><code>tree.leaves()</code> holds every leaf in tree order</td><td><span class="chip ok">pass</span></td><td><span class="chip ok">pass</span></td></tr>
+        <tr><td>Frozen after <code>build()</code>, lists unmodifiable, 3-child Branch rejected</td><td><span class="chip ok">pass</span></td><td><span class="chip ok">pass</span></td></tr>
+        <tr><td>Seed 67 node phase with the Q21 wiring (plain loop: 326)</td><td><span class="chip bad">&gt;20,000, runaway</span></td><td><span class="chip ok">326</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout info">
+    <p class="label">Generator before/after</p>
+    <p><code>GraphGenerator</code> doesn't use the quadtree yet, so a real before/after run would trivially match. The last row is a copy of the node phase of <code>run()</code> instead. Streets weren't simulated, and the real app wasn't run (it needs MySQL).</p>
+  </div>
+</section>
+
+<section class="s" id="setup">
+  <p class="label s-tag">Setup notes</p>
+  <h3>Two things outside the code</h3>
+  <div class="callout warn">
+    <p class="label">JAVA_HOME isn't set</p>
+    <p>That's why <code>mvnw.cmd</code> fails. Your JDK 25 is at <code>D:\program data\Java</code>. For one terminal: <code>$env:JAVA_HOME = "D:\program data\Java"</code>. To keep it, set it under Windows <em>Environment Variables</em>.</p>
+  </div>
+  <div class="callout info">
+    <p class="label">The throwaway test</p>
+    <p>It lives outside the repo, so it can't be committed: <code>C:\Users\maxgy\AppData\Local\Temp\claude\C--Users-maxgy-OneDrive-Desktop-Ragga\9a8a1598-be96-437e-a255-01c7e2aa7524\scratchpad\check\QuadTreeCheck.java</code></p>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+// marks the index entry of the section in view
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  if (!('IntersectionObserver' in window)) return;
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      links.forEach(function (a) { a.removeAttribute('aria-current'); });
+      var a = byId[e.target.id];
+      if (a) a.setAttribute('aria-current', 'true');
+    });
+  }, { rootMargin: '-15% 0px -75% 0px' });
+  Object.keys(byId).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) io.observe(el);
+  });
+})();
+</script>
+</body>
+</html>

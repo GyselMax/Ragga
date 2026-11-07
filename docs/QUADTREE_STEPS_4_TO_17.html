@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wiring Steps 4 to 17</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Literata:ital,wght@0,400;0,600;1,400&family=Schibsted+Grotesk:wght@500;700;800&display=swap">
+<style>
+/* always dark: the dark palette of COUNCIL_REVIEW.html */
+:root {
+  --paper: #12171b;
+  --sheet: #182027;
+  --ink: #dde4e8;
+  --ink-soft: #9cabb5;
+  --rule: #2c3841;
+  --accent: #86bbe0;
+  --accent-soft: #1c3042;
+  --warn: #e0aa5c;
+  --warn-soft: #33281a;
+  --ok: #8fd0a2;
+  --ok-soft: #1f3d2a;
+  --bad: #f0a0a0;
+  --bad-soft: #45242a;
+  --code-bg: #1b232a;
+  color-scheme: dark;
+
+  --f-display: "Schibsted Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Literata", Georgia, "Times New Roman", serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Consolas, "Courier New", monospace;
+}
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: 17px; line-height: 1.62; }
+code { font-family: var(--f-mono); font-size: .84em; background: var(--code-bg); padding: .08em .35em; border-radius: 4px; overflow-wrap: anywhere; }
+strong { font-weight: 600; }
+
+/* PAGE FRAME */
+.page { max-width: 80rem; margin: 0 auto; padding-inline: 24px; padding-block: 48px 96px; display: grid; grid-template-columns: 16.5rem minmax(0, 1fr); gap: 2.5rem 3.5rem; }
+@media (max-width: 880px) { .page { grid-template-columns: minmax(0, 1fr); padding-inline: 16px; padding-block: 28px 64px; gap: 2rem; } }
+.eyebrow, .label { font-family: var(--f-display); font-weight: 700; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; line-height: 1.3; margin: 0; }
+
+/* MASTHEAD */
+.masthead { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.5rem 2.5rem; align-items: end; padding-bottom: 2rem; border-bottom: 1px solid var(--rule); }
+.masthead-text { display: flex; flex-direction: column; gap: .7rem; min-width: 0; }
+.masthead .eyebrow { color: var(--accent); }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(2.2rem, 5.5vw, 3.5rem); line-height: 1.04; letter-spacing: -.025em; margin: 0; text-wrap: balance; }
+.lede { font-size: 1.12rem; color: var(--ink-soft); max-width: 60ch; margin: 0; }
+.meta { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-soft); margin: 0; }
+.badge { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .45rem; min-width: 15rem; }
+.badge > * { margin: 0; }
+.badge .label { color: var(--ink-soft); }
+.badge-word { font-family: var(--f-display); font-weight: 800; font-size: 2rem; line-height: 1.1; color: var(--accent); }
+.badge-row { display: flex; justify-content: space-between; align-items: center; gap: .8rem; font-family: var(--f-mono); font-size: 12.5px; }
+@media (max-width: 880px) { .masthead { grid-template-columns: minmax(0, 1fr); } .badge { min-width: 0; } }
+
+/* INDEX, in folders */
+.toc { position: sticky; top: 24px; align-self: start; display: flex; flex-direction: column; gap: .3rem; max-height: calc(100vh - 48px); overflow-y: auto; }
+.toc details > summary { display: flex; align-items: center; gap: .5rem; padding: .5rem .6rem; border-radius: 6px; cursor: pointer; list-style: none; font-family: var(--f-display); font-weight: 700; font-size: 14px; }
+.toc details > summary::-webkit-details-marker { display: none; }
+.toc details > summary::before { content: "▸"; width: .8rem; font-size: 11px; color: var(--ink-soft); transition: transform .15s; }
+.toc details[open] > summary::before { transform: rotate(90deg); }
+.toc details > summary:hover { background: var(--accent-soft); }
+.toc details > summary:focus-visible, .toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toc-n { margin-left: auto; font-family: var(--f-mono); font-size: 11.5px; font-weight: 600; color: var(--ink-soft); }
+.toc ol { list-style: none; margin: 0; padding: 0 0 .35rem .55rem; display: flex; flex-direction: column; gap: 2px; }
+.toc a { display: block; padding: .42rem .6rem; border-radius: 6px; color: var(--ink-soft); text-decoration: none; font-family: var(--f-display); font-weight: 500; font-size: 14px; line-height: 1.35; }
+.toc a:hover, .toc a[aria-current="true"] { background: var(--accent-soft); color: var(--ink); }
+@media (max-width: 880px) { .toc { position: static; max-height: none; } }
+@media (prefers-reduced-motion: reduce) { .toc details > summary::before { transition: none; } }
+
+/* SECTIONS */
+main { min-width: 0; display: flex; flex-direction: column; gap: 3rem; container-type: inline-size; }
+.part-head { display: flex; flex-direction: column; gap: .4rem; padding-top: 1rem; border-top: 3px solid var(--ink); }
+.part-head .eyebrow { color: var(--ink-soft); }
+.part-head h2 { font-family: var(--f-display); font-weight: 800; font-size: clamp(1.7rem, 3.6vw, 2.4rem); line-height: 1.1; margin: 0; letter-spacing: -.015em; }
+.part-head p { margin: 0; color: var(--ink-soft); max-width: 64ch; }
+.soft { color: var(--ink-soft); }
+
+/* STEP CARDS */
+.step { background: var(--sheet); border: 1px solid var(--rule); border-radius: 12px; padding: 1.2rem 1.3rem 1.3rem; display: flex; flex-direction: column; gap: .8rem; scroll-margin-top: 24px; max-width: 54rem; }
+.step > * { margin: 0; }
+.step-head { display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: .8rem; align-items: start; }
+.step-n { width: 2rem; height: 2rem; border-radius: 50%; background: var(--accent); color: var(--paper); font: 600 14px/2rem var(--f-mono); text-align: center; }
+.step-title { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.step-title > * { margin: 0; }
+.step h3 { font-family: var(--f-display); font-size: 1.3rem; font-weight: 700; line-height: 1.25; }
+.where { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-soft); }
+.facts { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: .5rem .9rem; align-items: baseline; }
+.facts > * { margin: 0; }
+.facts .k { font-family: var(--f-display); font-weight: 700; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); padding-top: .2rem; }
+.facts .k.why { color: var(--accent); }
+.facts .k.risk { color: var(--bad); }
+.facts .k.check { color: var(--ok); }
+@container (max-width: 34rem) { .facts { grid-template-columns: minmax(0, 1fr); gap: .15rem; } .facts .k { padding-top: .6rem; } }
+
+/* CODE */
+pre { margin: 0; font-family: var(--f-mono); font-size: 12.5px; line-height: 1.65; background: var(--code-bg); border-radius: 6px; padding: .65rem .85rem; overflow-x: auto; }
+pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+.cm { color: var(--ink-soft); }
+.add { color: var(--ok); }
+.del { color: var(--bad); text-decoration: line-through; }
+
+/* CALLOUTS */
+.callout { border-radius: 8px; padding: .95rem 1.15rem; display: flex; flex-direction: column; gap: .35rem; max-width: 76ch; }
+.callout > * { margin: 0; }
+.callout.warn { background: var(--warn-soft); }
+.callout.warn .label { color: var(--warn); }
+.callout.info { background: var(--accent-soft); }
+.callout.info .label { color: var(--accent); }
+
+/* TABLES */
+.tbl { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; max-width: 54rem; }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; line-height: 1.5; }
+th, td { text-align: left; padding: .6rem .9rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-family: var(--f-display); font-weight: 700; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper); white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+td.n { font-family: var(--f-mono); font-weight: 600; color: var(--warn); white-space: nowrap; }
+.tbl td:nth-child(2) { min-width: 11rem; }
+.tbl td:nth-child(2) code { white-space: nowrap; overflow-wrap: normal; }
+
+/* CHIPS */
+.chip { display: inline-block; font-family: var(--f-display); font-weight: 700; font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; padding: .18em .6em; border-radius: 99px; white-space: nowrap; line-height: 1.5; }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.chip.info { background: var(--accent-soft); color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="masthead">
+  <div class="masthead-text">
+    <p class="eyebrow">Wiring · steps 4–17 · 2026-11-04</p>
+    <h1>The rest of the wiring, step by step</h1>
+    <p class="lede">For each step: where it goes in your current file, what changes, why, what goes wrong if it's off, and how to check it. Every step in Part A keeps the city exactly the same, so seed 67 must give 326 nodes and 549 streets after each one.</p>
+    <p class="meta">line numbers from GraphGenerator.java as it is now, with steps 2 and 3 done</p>
+  </div>
+  <div class="badge" aria-label="Five quadtree steps left, nine draft live view steps">
+    <p class="label">Left to do</p>
+    <p class="badge-word">5 + 9</p>
+    <p class="badge-row"><span>A · quadtree</span><span class="chip info">4–8</span></p>
+    <p class="badge-row"><span>B · live view (draft)</span><span class="chip warn">9–17</span></p>
+    <p class="badge-row"><span>check after each</span><span>326 · 549</span></p>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <details open>
+    <summary>A · Quadtree <span class="toc-n">5</span></summary>
+    <ol>
+      <li><a href="#s4">4 · Pass the builder on</a></li>
+      <li><a href="#s5">5 · Nearby nodes only</a></li>
+      <li><a href="#s6">6 · Freeze the tree</a></li>
+      <li><a href="#s7">7 · Streets step to nearby nodes</a></li>
+      <li><a href="#s8">8 · Nearby streets for crossings</a></li>
+    </ol>
+  </details>
+  <details open>
+    <summary>B · Live view <span class="toc-n">1</span></summary>
+    <ol>
+      <li><a href="#part-b">Steps 9–17 at a glance</a></li>
+    </ol>
+  </details>
+</nav>
+
+<main>
+
+<div class="part-head">
+  <p class="eyebrow">Part A</p>
+  <h2>Quadtree</h2>
+  <p>Steps 4–5 finish the node phase. Steps 6–8 hand the finished tree to the street phase.</p>
+</div>
+
+<article class="step" id="s4">
+  <div class="step-head"><span class="step-n">4</span><div class="step-title"><h3>Pass the builder to the node phase</h3><p class="where">run():76 · generateClusteredNodes:102</p></div></div>
+<pre><code>ArrayList&lt;Node&gt; children = generateClusteredNodes(current, random, graph<span class="add">, index</span>);
+
+private ArrayList&lt;Node&gt; generateClusteredNodes(@NonNull Node node, Random random,
+        @NonNull Graph&lt;Node, DefaultEdge&gt; graph<span class="add">, @NonNull QuadTreeBuilder index</span>) {</code></pre>
+  <div class="facts">
+    <p class="k">What</p><p>Only a new parameter. Nothing uses it yet.</p>
+    <p class="k why">Why</p><p><code>index</code> is a local in <code>run()</code>, like <code>graph</code>, so it travels the same way: as a parameter.</p>
+    <p class="k check">Check</p><p>It compiles, and the city is unchanged.</p>
+  </div>
+</article>
+
+<article class="step" id="s5">
+  <div class="step-head"><span class="step-n">5</span><div class="step-title"><h3>Check nearby nodes only, and keep the tree in step</h3><p class="where">generateClusteredNodes:130–132</p></div></div>
+<pre><code><span class="del">if (isWithinBounds(candidate) &amp;&amp; isFarEnough(candidate, graph.vertexSet(), …)) {</span>
+<span class="add">if (!isWithinBounds(candidate)) continue;</span>
+<span class="add">List&lt;Node&gt; nearby = index.findWithin(candidateX, candidateY, NODE_MINIMUM_DISTANCE);</span>
+<span class="add">if (isFarEnough(candidate, nearby, NODE_MINIMUM_DISTANCE)) {</span>
+    graph.addVertex(candidate);
+    <span class="add">index.insert(candidate);</span>
+    generatedNodes.add(candidate);
+}</code></pre>
+  <div class="facts">
+    <p class="k">What</p><p><code>isFarEnough</code> checks the few nodes within 40 instead of every node in the graph. Each accepted node goes into the tree straight away, so the next candidate can see it.</p>
+    <p class="k why">Why</p><p>The bounds check comes first so thrown-away candidates don't cost a search. <code>isFarEnough</code> itself doesn't change: it already takes a <code>Collection&lt;Node&gt;</code>. A node exactly 40 away is returned (the tree uses ≤) and still accepted (<code>isFarEnough</code> uses &lt;), the same as today.</p>
+    <p class="k risk">If wrong</p><p>Without <code>index.insert(candidate)</code>, the tree only ever holds the starter, so nearly every candidate passes. Measured: the node phase runs away, past 20,000 nodes and still growing, where it should stop at 326.</p>
+    <p class="k check">Check</p><p>Still 326 · 549. The tree returns exactly the nodes within 40, so every decision comes out the same.</p>
+  </div>
+</article>
+
+<article class="step" id="s6">
+  <div class="step-head"><span class="step-n">6</span><div class="step-title"><h3>Freeze the tree once the nodes are final</h3><p class="where">run(): after the growth loop ends at :83, before :90 · generateEdges:164 and :170</p></div></div>
+<pre><code><span class="add">QuadTree tree = index.build();</span>          <span class="cm">// import …quadtree.QuadTree</span>
+generateEdges(graph, random<span class="add">, tree</span>);
+
+private void generateEdges(@NonNull Graph&lt;Node, DefaultEdge&gt; graph,
+                           Random random<span class="add">, QuadTree tree</span>)
+    growStreet(graph<span class="add">, tree</span>, start);</code></pre>
+  <div class="facts">
+    <p class="k">What</p><p>Turns the builder into the read-only <code>QuadTree</code> (leaves and branches), and hands it to the street phase.</p>
+    <p class="k why">Why</p><p>No node is added after the growth loop, so this is the one moment the tree is complete. The street phase only reads, and the frozen version can't be changed by accident.</p>
+    <p class="k risk">If wrong</p><p>Call <code>build()</code> before the growth loop and the frozen tree holds only the starter. Measured: seed 67 gets 4 streets instead of 549, because every street can only step to the starter.</p>
+    <p class="k check">Check</p><p>Still 326 · 549. Nothing reads <code>tree</code> until step 7.</p>
+  </div>
+</article>
+
+<article class="step" id="s7">
+  <div class="step-head"><span class="step-n">7</span><div class="step-title"><h3>Streets only look at nodes within reach</h3><p class="where">growStreet:175 and :183–185 · isWithinSearchRadius:228</p></div></div>
+<pre><code>private void growStreet(@NonNull Graph&lt;Node, DefaultEdge&gt; graph,
+                        <span class="add">QuadTree tree,</span> @NonNull Node start)
+
+<span class="del">for (Node candidate : graph.vertexSet()) {</span>
+<span class="add">for (Node candidate : tree.findWithin(current.getX(), current.getY(),</span>
+<span class="add">                                      EDGE_SEARCH_RADIUS)) {</span>
+    if (candidate == current) continue;
+    <span class="del">if (!isWithinSearchRadius(current, candidate)) continue;</span></code></pre>
+  <div class="facts">
+    <p class="k">What</p><p>Each street step looks at the nodes within 120 (about 15 at seed 67) instead of all 326. The <code>isWithinSearchRadius</code> line and the method at :228 can go.</p>
+    <p class="k why">Why</p><p>The tree uses the same <code>dx² + dy² ≤ r²</code> test, so <code>isWithinSearchRadius</code> would always say yes. The nodes come back in a different order than <code>vertexSet()</code>, which could only matter on an exact tie in the score. Measured: no tie happened, and the streets are identical.</p>
+    <p class="k risk">If wrong</p><p>This is where your <code>QuadTree.findWithin</code> needs exactly three parameters. With the extra <code>List&lt;Node&gt; result</code> from step 1, this line won't compile.</p>
+    <p class="k check">Check</p><p>Still 326 · 549.</p>
+  </div>
+</article>
+
+<article class="step" id="s8">
+  <div class="step-head"><span class="step-n">8</span><div class="step-title"><h3>Test crossings only against nearby streets</h3><p class="where">passesEdgeConstraints:237 and :242 · isCrossingFree:246–247</p></div></div>
+<pre><code><span class="cm">// passesEdgeConstraints(graph, tree, a, b) hands tree on:</span>
+        &amp;&amp; isCrossingFree(graph<span class="add">, tree</span>, a, b);
+
+<span class="del">for (DefaultEdge edge : graph.edgeSet()) {</span>
+<span class="add">for (Node node : tree.findWithin(a.getX(), a.getY(), 2 * EDGE_SEARCH_RADIUS)) {</span>
+    <span class="add">for (DefaultEdge edge : graph.edgesOf(node)) {</span>
+        <span class="cm">// the body stays the same: skip shared ends, Line2D.linesIntersect</span>
+    <span class="add">}</span>
+}</code></pre>
+  <div class="facts">
+    <p class="k">What</p><p>Instead of every street in the city, it tests the streets attached to nodes within 240 of <code>a</code>.</p>
+    <p class="k why">Why</p><p>Every street is at most 120 long, so any street that could cross <code>a→b</code> has both ends within 240 of <code>a</code>. That's the proof in <code>QUADTREE_CHANGE1.html</code>. A street can turn up twice, once from each end, which is harmless; change 1 removes that later.</p>
+    <p class="k risk">If wrong</p><p>Measured with 120 instead of 240: seed 67 and the 9-starter city still came out with 0 crossing streets. So 240 isn't something these cities needed. It's the radius that's <em>guaranteed</em> to catch every crossing, so keep <code>2 * EDGE_SEARCH_RADIUS</code>, tied to the constant.</p>
+    <p class="k check">Check</p><p>326 · 549, and <code>graph.png</code> identical to the baseline. Ask me and I'll run your code outside Spring to compare it byte for byte.</p>
+  </div>
+</article>
+
+<div class="callout info">
+  <p class="label">After step 8</p>
+  <p>The quadtree is fully wired in. That's the point where change 1 (<code>QUADTREE_CHANGE1.html</code>) fits on top: the 240 search from step 8, done once per street step.</p>
+</div>
+
+<div class="part-head" id="part-b">
+  <p class="eyebrow">Part B · draft</p>
+  <h2>Live view, steps 9–17</h2>
+  <p>Only once Part A works. The class is a draft in <code>docs/examples/LiveCityView.java</code>, and the code for each step is on the wiring checklist page.</p>
+</div>
+
+<div class="tbl">
+  <table>
+    <thead><tr><th>Step</th><th>Where</th><th>What it does, and why</th></tr></thead>
+    <tbody>
+      <tr><td class="n">9</td><td>new <code>generation/view/</code></td><td>The window class: draws nodes, streets and the tree's squares, and handles pausing and speed. Its hooks do nothing when the view is off.</td></tr>
+      <tr><td class="n">10</td><td><code>RaggaApplication.main</code></td><td><code>setHeadless(false)</code>. Spring starts Java in "no screen" mode by default, and in that mode no window can open.</td></tr>
+      <tr><td class="n">11</td><td><code>application.properties</code></td><td>Three settings: on/off, and milliseconds to wait per node and per street, so you can watch it happen.</td></tr>
+      <tr><td class="n">12</td><td>GraphGenerator fields</td><td>Read those settings with <code>@Value</code>, and keep a <code>view</code> field that starts as <code>LiveCityView.NONE</code>, the do-nothing view.</td></tr>
+      <tr><td class="n">13</td><td>start of <code>run()</code></td><td>Open the window, or get <code>NONE</code> back when it's switched off.</td></tr>
+      <tr><td class="n">14</td><td>next to both <code>addVertex</code> calls</td><td><code>view.nodeAdded(…)</code>: each node appears as it's accepted. It's the same pairing rule as the tree's <code>insert</code>.</td></tr>
+      <tr><td class="n">15</td><td>after <code>index.build()</code></td><td><code>view.treeBuilt(tree)</code>: the tree's leaves appear as faint squares.</td></tr>
+      <tr><td class="n">16</td><td><code>growStreet</code></td><td><code>view.stepAt(…)</code> at the top of each step shows where the street is, with its 120 circle. <code>view.streetAdded(…)</code> after <code>addEdge</code> draws the new street.</td></tr>
+      <tr><td class="n">17</td><td>end of <code>run()</code></td><td><code>view.done()</code>: clears the marker and shows "done".</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</main>
+</div>
+
+<script>
+// marks the index entry of the section in view
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  if (!('IntersectionObserver' in window)) return;
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      links.forEach(function (a) { a.removeAttribute('aria-current'); });
+      var a = byId[e.target.id];
+      if (a) a.setAttribute('aria-current', 'true');
+    });
+  }, { rootMargin: '-15% 0px -75% 0px' });
+  Object.keys(byId).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) io.observe(el);
+  });
+})();
+</script>
+</body>
+</html>

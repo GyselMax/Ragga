@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wiring Step 3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Literata:ital,wght@0,400;0,600;1,400&family=Schibsted+Grotesk:wght@500;700;800&display=swap">
+<style>
+/* always dark: the dark palette of COUNCIL_REVIEW.html */
+:root {
+  --paper: #12171b;
+  --sheet: #182027;
+  --ink: #dde4e8;
+  --ink-soft: #9cabb5;
+  --rule: #2c3841;
+  --accent: #86bbe0;
+  --accent-soft: #1c3042;
+  --warn: #e0aa5c;
+  --warn-soft: #33281a;
+  --ok: #8fd0a2;
+  --ok-soft: #1f3d2a;
+  --bad: #f0a0a0;
+  --bad-soft: #45242a;
+  --code-bg: #1b232a;
+  color-scheme: dark;
+
+  --f-display: "Schibsted Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Literata", Georgia, "Times New Roman", serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Consolas, "Courier New", monospace;
+}
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: 17px; line-height: 1.62; }
+code { font-family: var(--f-mono); font-size: .84em; background: var(--code-bg); padding: .08em .35em; border-radius: 4px; overflow-wrap: anywhere; }
+strong { font-weight: 600; }
+
+/* PAGE FRAME */
+.page { max-width: 80rem; margin: 0 auto; padding-inline: 24px; padding-block: 48px 96px; display: grid; grid-template-columns: 16.5rem minmax(0, 1fr); gap: 2.5rem 3.5rem; }
+@media (max-width: 880px) { .page { grid-template-columns: minmax(0, 1fr); padding-inline: 16px; padding-block: 28px 64px; gap: 2rem; } }
+.eyebrow, .label { font-family: var(--f-display); font-weight: 700; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; line-height: 1.3; margin: 0; }
+
+/* MASTHEAD */
+.masthead { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.5rem 2.5rem; align-items: end; padding-bottom: 2rem; border-bottom: 1px solid var(--rule); }
+.masthead-text { display: flex; flex-direction: column; gap: .7rem; min-width: 0; }
+.masthead .eyebrow { color: var(--accent); }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(2.2rem, 5.5vw, 3.5rem); line-height: 1.04; letter-spacing: -.025em; margin: 0; text-wrap: balance; }
+.lede { font-size: 1.12rem; color: var(--ink-soft); max-width: 60ch; margin: 0; }
+.meta { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-soft); margin: 0; }
+.badge { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .45rem; min-width: 15rem; }
+.badge > * { margin: 0; }
+.badge .label { color: var(--ink-soft); }
+.badge-word { font-family: var(--f-display); font-weight: 800; font-size: 2rem; line-height: 1.1; color: var(--accent); }
+.badge-row { display: flex; justify-content: space-between; align-items: center; gap: .8rem; font-family: var(--f-mono); font-size: 12.5px; }
+@media (max-width: 880px) { .masthead { grid-template-columns: minmax(0, 1fr); } .badge { min-width: 0; } }
+
+/* INDEX, in folders */
+.toc { position: sticky; top: 24px; align-self: start; display: flex; flex-direction: column; gap: .3rem; max-height: calc(100vh - 48px); overflow-y: auto; }
+.toc details > summary { display: flex; align-items: center; gap: .5rem; padding: .5rem .6rem; border-radius: 6px; cursor: pointer; list-style: none; font-family: var(--f-display); font-weight: 700; font-size: 14px; }
+.toc details > summary::-webkit-details-marker { display: none; }
+.toc details > summary::before { content: "▸"; width: .8rem; font-size: 11px; color: var(--ink-soft); transition: transform .15s; }
+.toc details[open] > summary::before { transform: rotate(90deg); }
+.toc details > summary:hover { background: var(--accent-soft); }
+.toc details > summary:focus-visible, .toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toc-n { margin-left: auto; font-family: var(--f-mono); font-size: 11.5px; font-weight: 600; color: var(--ink-soft); }
+.toc ol { list-style: none; margin: 0; padding: 0 0 .35rem .55rem; display: flex; flex-direction: column; gap: 2px; }
+.toc a { display: block; padding: .42rem .6rem; border-radius: 6px; color: var(--ink-soft); text-decoration: none; font-family: var(--f-display); font-weight: 500; font-size: 14px; line-height: 1.35; }
+.toc a:hover, .toc a[aria-current="true"] { background: var(--accent-soft); color: var(--ink); }
+@media (max-width: 880px) { .toc { position: static; max-height: none; } }
+@media (prefers-reduced-motion: reduce) { .toc details > summary::before { transition: none; } }
+
+/* SECTIONS */
+main { min-width: 0; display: flex; flex-direction: column; gap: 4rem; container-type: inline-size; }
+section.s { display: flex; flex-direction: column; gap: 1.15rem; scroll-margin-top: 24px; min-width: 0; }
+section.s > * { margin: 0; }
+section.s + section.s { padding-top: 3.2rem; border-top: 1px solid var(--rule); }
+.s-tag { color: var(--accent); }
+section.s h3 { font-family: var(--f-display); font-weight: 700; font-size: clamp(1.4rem, 3vw, 1.9rem); line-height: 1.17; letter-spacing: -.012em; max-width: 32ch; text-wrap: balance; }
+section.s p, section.s li { max-width: 70ch; }
+.soft { color: var(--ink-soft); }
+
+/* CALLOUTS */
+.callout { border-radius: 8px; padding: .95rem 1.15rem; display: flex; flex-direction: column; gap: .35rem; max-width: 76ch; }
+.callout > * { margin: 0; }
+.callout.warn { background: var(--warn-soft); }
+.callout.warn .label { color: var(--warn); }
+.callout.info { background: var(--accent-soft); }
+.callout.info .label { color: var(--accent); }
+.callout.ok { background: var(--ok-soft); }
+.callout.ok .label { color: var(--ok); }
+
+/* CODE */
+.panel { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem 1.1rem 1.1rem; display: flex; flex-direction: column; gap: .6rem; min-width: 0; max-width: 52rem; }
+.panel > * { margin: 0; }
+.panel .label { color: var(--ink-soft); }
+pre { margin: 0; font-family: var(--f-mono); font-size: 12.5px; line-height: 1.65; background: var(--code-bg); border-radius: 6px; padding: .65rem .85rem; overflow-x: auto; }
+pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+.ln { color: var(--rule); user-select: none; }
+.cm { color: var(--ink-soft); }
+.add { color: var(--ok); }
+.addrow { background: var(--ok-soft); display: inline-block; width: 100%; }
+
+/* LINE-BY-LINE */
+.lines { display: flex; flex-direction: column; gap: 1.2rem; max-width: 52rem; }
+.line { background: var(--sheet); border: 1px solid var(--rule); border-left: 4px solid var(--ok); border-radius: 10px; padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .55rem; }
+.line > * { margin: 0; }
+.line h4 { font-family: var(--f-mono); font-size: .9rem; font-weight: 600; color: var(--ok); overflow-wrap: anywhere; }
+.line ul { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .35rem; }
+
+/* TABLES */
+.tbl { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; line-height: 1.5; }
+th, td { text-align: left; padding: .6rem .9rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-family: var(--f-display); font-weight: 700; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper); white-space: nowrap; }
+th.num, td.num { text-align: right; font-family: var(--f-mono); font-size: 13px; white-space: nowrap; }
+td .bad { color: var(--bad); font-weight: 600; }
+tbody tr:last-child td { border-bottom: 0; }
+td.topic { font-family: var(--f-display); font-weight: 700; font-size: .95rem; }
+
+/* CHIPS */
+.chip { display: inline-block; font-family: var(--f-display); font-weight: 700; font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; padding: .18em .6em; border-radius: 99px; white-space: nowrap; line-height: 1.5; }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="masthead">
+  <div class="masthead-text">
+    <p class="eyebrow">Wiring · step 3 · 2026-11-04</p>
+    <h1>Give the quadtree its first nodes</h1>
+    <p class="lede">Two lines in <code>run()</code>. One creates the empty tree that covers the whole map, and one puts each starter into it, so every later search can find them.</p>
+    <p class="meta">GraphGenerator.java · run() · lines 63–68 as they are now</p>
+  </div>
+  <div class="badge" aria-label="Step 3: two lines, the city stays the same">
+    <p class="label">Step 3</p>
+    <p class="badge-word">2 lines</p>
+    <p class="badge-row"><span>city after this step</span><span class="chip ok">unchanged</span></p>
+    <p class="badge-row"><span>without insert(seed)</span><span class="chip bad">different city</span></p>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <details open>
+    <summary>Step 3 <span class="toc-n">4</span></summary>
+    <ol>
+      <li><a href="#where">Where it goes</a></li>
+      <li><a href="#what">What each line does</a></li>
+      <li><a href="#forget">If you forget insert(seed)</a></li>
+      <li><a href="#after">After this step</a></li>
+    </ol>
+  </details>
+  <details open>
+    <summary>Also <span class="toc-n">1</span></summary>
+    <ol>
+      <li><a href="#step1">A heads-up on step 1</a></li>
+    </ol>
+  </details>
+</nav>
+
+<main>
+
+<section class="s" id="where">
+  <p class="label s-tag">Where it goes</p>
+  <h3>Between the queue and the seed loop, and inside that loop</h3>
+  <div class="panel">
+    <p class="label">GraphGenerator.run() · new lines in green</p>
+<pre><code><span class="ln">63</span>  <span class="cm">// generate the queue &amp; add the seeds to it</span>
+<span class="ln">64</span>  Queue&lt;Node&gt; pending = new ArrayDeque&lt;&gt;();
+<span class="ln">  </span>  <span class="add">QuadTreeBuilder index =</span>
+<span class="ln">  </span>  <span class="add">        new QuadTreeBuilder(0, 0, Math.max(GRID_WIDTH, GRID_HEIGHT));</span>
+<span class="ln">65</span>  for (Node seed : seeds) {
+<span class="ln">66</span>      graph.addVertex(seed);
+<span class="ln">  </span>      <span class="add">index.insert(seed);</span>
+<span class="ln">67</span>      pending.add(seed);
+<span class="ln">68</span>  }</code></pre>
+  </div>
+  <p class="soft">Line numbers are from your current file. Step 2's imports (<code>QuadTreeBuilder</code>) have to be in place for this to compile.</p>
+</section>
+
+<section class="s" id="what">
+  <p class="label s-tag">What each line does</p>
+  <h3>An empty square over the map, then the starters go in</h3>
+  <div class="lines">
+    <div class="line">
+      <h4>QuadTreeBuilder index = new QuadTreeBuilder(0, 0, Math.max(GRID_WIDTH, GRID_HEIGHT));</h4>
+      <ul>
+        <li><strong>What it builds:</strong> the tree's top square, with its corner at (0, 0) and its side as long as the map's longer side: 1500 for you. It starts as one empty leaf.</li>
+        <li><strong>Why <code>Math.max</code>:</strong> the tree is square, but the map doesn't have to be. <code>isWithinBounds</code> accepts anything in 0..<code>GRID_WIDTH</code> × 0..<code>GRID_HEIGHT</code>, so the square must reach the far edge in both directions. A node outside the square would be lost to every search.</li>
+        <li><strong>Why here:</strong> it has to exist before the starters go in, and before the growth loop, which hands it on in step 4. It's a local in <code>run()</code>, like <code>graph</code>.</li>
+        <li><strong>Why "index":</strong> it sits next to the graph like an index next to a database table. The graph answers "what is connected to what"; the index answers "what is near this point".</li>
+      </ul>
+    </div>
+    <div class="line">
+      <h4>index.insert(seed);</h4>
+      <ul>
+        <li><strong>What it does:</strong> drops the starter into the leaf that covers its position. With one starter, the tree is a single leaf holding one node. It splits into four when the 9th node arrives (<code>CAPACITY</code> is 8).</li>
+        <li><strong>Why right after <code>graph.addVertex(seed)</code>:</strong> the rule for the whole wiring is that every <code>addVertex</code> gets an <code>insert</code>. There are exactly two places: here for the starters, and in step 5 for every generated node.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="forget">
+  <p class="label s-tag">If you forget insert(seed)</p>
+  <h3>The starter becomes invisible, and the city changes</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Finished city: with → <span style="color:var(--bad)">without</span></th><th class="num">Seed 67</th><th class="num">36 starters</th></tr></thead>
+      <tbody>
+        <tr><td class="topic">Nodes</td><td class="num">326 → <span class="bad">303</span></td><td class="num">11,106 → <span class="bad">11,357</span></td></tr>
+        <tr><td class="topic">Streets</td><td class="num">549 → <span class="bad">519</span></td><td class="num">18,961 → <span class="bad">19,321</span></td></tr>
+        <tr><td class="topic">Nodes closer than 40 to a starter</td><td class="num">0 → <span class="bad">1</span></td><td class="num">0 → <span class="bad">52</span></td></tr>
+        <tr><td class="topic">Streets at the starters</td><td class="num">4 → <span class="bad">1</span></td><td class="num">130 → <span class="bad">26</span></td></tr>
+        <tr><td class="topic">Starters with no street</td><td class="num">0 → 0</td><td class="num">0 → <span class="bad">10</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul>
+    <li><strong>In the node phase</strong> (step 5), <code>isFarEnough</code> only sees what the index returns. Candidates can then land within 40 of a starter, and every later random draw shifts, which gives a different city.</li>
+    <li><strong>In the street phase</strong> (step 7), streets only step onto nodes the frozen tree returns. A starter that isn't in it gets at most the one street from its own turn, and none from anyone else.</li>
+  </ul>
+  <p class="soft">Measured on the scratch copy of your generator with only that line removed. Nothing errors: the city just quietly comes out different.</p>
+</section>
+
+<section class="s" id="after">
+  <p class="label s-tag">After this step</p>
+  <h3>A safe point to run: nothing reads the index yet</h3>
+  <p>Until step 5 searches the index, it only gets filled. So seed 67 must still give <strong>326 nodes and 549 streets</strong>, exactly as before. IntelliJ will flag <code>index</code> as unused until step 4 passes it on.</p>
+</section>
+
+<section class="s" id="step1">
+  <p class="label s-tag">A heads-up on step 1</p>
+  <h3>Your new <code>QuadTree.findWithin</code> takes one parameter too many</h3>
+  <div class="panel">
+    <p class="label">QuadTree.java:20–23 · as it is now (long lines wrapped here)</p>
+<pre><code><span class="cm">// adds every node within radius of (x, y) to result —</span>
+<span class="cm">// for loops that want to reuse one list</span>
+public List&lt;Node&gt; findWithin(double x, double y, double radius,
+                             List&lt;Node&gt; result) {
+    return root.findWithin(x, y, radius);
+}</code></pre>
+  </div>
+  <ul>
+    <li>The <code>result</code> parameter is never used. Steps 7 and 8 call <code>tree.findWithin(x, y, radius)</code> with three arguments, so they won't compile against this signature. Drop the fourth parameter.</li>
+    <li>The comment is a copy of the <code>collectWithin</code> one. This method returns a new list instead.</li>
+  </ul>
+</section>
+
+</main>
+</div>
+
+<script>
+// marks the index entry of the section in view
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  if (!('IntersectionObserver' in window)) return;
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      links.forEach(function (a) { a.removeAttribute('aria-current'); });
+      var a = byId[e.target.id];
+      if (a) a.setAttribute('aria-current', 'true');
+    });
+  }, { rootMargin: '-15% 0px -75% 0px' });
+  Object.keys(byId).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) io.observe(el);
+  });
+})();
+</script>
+</body>
+</html>

@@ -17,6 +17,11 @@ public record QuadTree(QuadSquare root, List<Leaf> leaves) {
         root.collectWithin(x, y, radius, result);
     }
 
+    // adds every node within radius of (x, y) to result — for loops that want to reuse one list
+    public List<Node> findWithin(double x, double y, double radius, List<Node> result) {
+        return root.findWithin(x, y, radius);
+    }
+
     // how many nodes the whole tree holds
     public int nodeCount() {
         return root.nodeCount();

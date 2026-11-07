@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Why insert Is Public</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Literata:ital,wght@0,400;0,600;1,400&family=Schibsted+Grotesk:wght@500;700;800&display=swap">
+<style>
+/* always dark: the dark palette of COUNCIL_REVIEW.html */
+:root {
+  --paper: #12171b;
+  --sheet: #182027;
+  --ink: #dde4e8;
+  --ink-soft: #9cabb5;
+  --rule: #2c3841;
+  --accent: #86bbe0;
+  --accent-soft: #1c3042;
+  --warn: #e0aa5c;
+  --warn-soft: #33281a;
+  --ok: #8fd0a2;
+  --ok-soft: #1f3d2a;
+  --bad: #f0a0a0;
+  --bad-soft: #45242a;
+  --code-bg: #1b232a;
+  color-scheme: dark;
+
+  --f-display: "Schibsted Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Literata", Georgia, "Times New Roman", serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Consolas, "Courier New", monospace;
+}
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: 17px; line-height: 1.62; }
+code { font-family: var(--f-mono); font-size: .84em; background: var(--code-bg); padding: .08em .35em; border-radius: 4px; overflow-wrap: anywhere; }
+strong { font-weight: 600; }
+
+/* PAGE FRAME */
+.page { max-width: 80rem; margin: 0 auto; padding-inline: 24px; padding-block: 48px 96px; display: grid; grid-template-columns: 16.5rem minmax(0, 1fr); gap: 2.5rem 3.5rem; }
+@media (max-width: 880px) { .page { grid-template-columns: minmax(0, 1fr); padding-inline: 16px; padding-block: 28px 64px; gap: 2rem; } }
+.eyebrow, .label { font-family: var(--f-display); font-weight: 700; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; line-height: 1.3; margin: 0; }
+
+/* MASTHEAD */
+.masthead { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.5rem 2.5rem; align-items: end; padding-bottom: 2rem; border-bottom: 1px solid var(--rule); }
+.masthead-text { display: flex; flex-direction: column; gap: .7rem; min-width: 0; }
+.masthead .eyebrow { color: var(--accent); }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(2.2rem, 5.5vw, 3.5rem); line-height: 1.04; letter-spacing: -.025em; margin: 0; text-wrap: balance; }
+.lede { font-size: 1.12rem; color: var(--ink-soft); max-width: 60ch; margin: 0; }
+.meta { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-soft); margin: 0; }
+.badge { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .45rem; min-width: 15rem; }
+.badge > * { margin: 0; }
+.badge .label { color: var(--ink-soft); }
+.badge-word { font-family: var(--f-display); font-weight: 800; font-size: 2rem; line-height: 1.1; color: var(--accent); }
+.badge-row { display: flex; justify-content: space-between; align-items: center; gap: .8rem; font-family: var(--f-mono); font-size: 12.5px; }
+@media (max-width: 880px) { .masthead { grid-template-columns: minmax(0, 1fr); } .badge { min-width: 0; } }
+
+/* INDEX, in folders */
+.toc { position: sticky; top: 24px; align-self: start; display: flex; flex-direction: column; gap: .3rem; max-height: calc(100vh - 48px); overflow-y: auto; }
+.toc details > summary { display: flex; align-items: center; gap: .5rem; padding: .5rem .6rem; border-radius: 6px; cursor: pointer; list-style: none; font-family: var(--f-display); font-weight: 700; font-size: 14px; }
+.toc details > summary::-webkit-details-marker { display: none; }
+.toc details > summary::before { content: "▸"; width: .8rem; font-size: 11px; color: var(--ink-soft); transition: transform .15s; }
+.toc details[open] > summary::before { transform: rotate(90deg); }
+.toc details > summary:hover { background: var(--accent-soft); }
+.toc details > summary:focus-visible, .toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toc-n { margin-left: auto; font-family: var(--f-mono); font-size: 11.5px; font-weight: 600; color: var(--ink-soft); }
+.toc ol { list-style: none; margin: 0; padding: 0 0 .35rem .55rem; display: flex; flex-direction: column; gap: 2px; }
+.toc a { display: block; padding: .42rem .6rem; border-radius: 6px; color: var(--ink-soft); text-decoration: none; font-family: var(--f-display); font-weight: 500; font-size: 14px; line-height: 1.35; }
+.toc a:hover, .toc a[aria-current="true"] { background: var(--accent-soft); color: var(--ink); }
+@media (max-width: 880px) { .toc { position: static; max-height: none; } }
+@media (prefers-reduced-motion: reduce) { .toc details > summary::before { transition: none; } }
+
+/* SECTIONS */
+main { min-width: 0; display: flex; flex-direction: column; gap: 4rem; container-type: inline-size; }
+section.s { display: flex; flex-direction: column; gap: 1.15rem; scroll-margin-top: 24px; min-width: 0; }
+section.s > * { margin: 0; }
+section.s + section.s { padding-top: 3.2rem; border-top: 1px solid var(--rule); }
+.s-tag { color: var(--accent); }
+section.s h3 { font-family: var(--f-display); font-weight: 700; font-size: clamp(1.4rem, 3vw, 1.9rem); line-height: 1.17; letter-spacing: -.012em; max-width: 32ch; text-wrap: balance; }
+section.s p, section.s li { max-width: 70ch; }
+section.s ul { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: .45rem; }
+.soft { color: var(--ink-soft); }
+
+/* CALLOUTS */
+.callout { border-radius: 8px; padding: .95rem 1.15rem; display: flex; flex-direction: column; gap: .35rem; max-width: 76ch; }
+.callout > * { margin: 0; }
+.callout.warn { background: var(--warn-soft); }
+.callout.warn .label { color: var(--warn); }
+.callout.info { background: var(--accent-soft); }
+.callout.info .label { color: var(--accent); }
+.callout.ok { background: var(--ok-soft); }
+.callout.ok .label { color: var(--ok); }
+
+/* CODE */
+.panel { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem 1.1rem 1.1rem; display: flex; flex-direction: column; gap: .6rem; min-width: 0; max-width: 52rem; }
+.panel > * { margin: 0; }
+.panel .label { color: var(--ink-soft); }
+pre { margin: 0; font-family: var(--f-mono); font-size: 12.5px; line-height: 1.65; background: var(--code-bg); border-radius: 6px; padding: .65rem .85rem; overflow-x: auto; }
+pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+.cm { color: var(--ink-soft); }
+.err { color: var(--bad); }
+
+/* TABLES */
+.tbl { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; max-width: 52rem; }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; line-height: 1.5; }
+th, td { text-align: left; padding: .6rem .9rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-family: var(--f-display); font-weight: 700; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper); white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+td.loc { font-family: var(--f-mono); font-size: 13px; white-space: nowrap; }
+td.topic { font-family: var(--f-display); font-weight: 700; font-size: .95rem; white-space: nowrap; }
+
+/* CHIPS */
+.chip { display: inline-block; font-family: var(--f-display); font-weight: 700; font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; padding: .18em .6em; border-radius: 99px; white-space: nowrap; line-height: 1.5; }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.chip.info { background: var(--accent-soft); color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="masthead">
+  <div class="masthead-text">
+    <p class="eyebrow">Access · QuadTreeBuilder.insert · 2026-11-04</p>
+    <h1>insert has to stay public</h1>
+    <p class="lede">The generator calls it from another class in another package. <code>private</code> only allows calls from code inside <code>QuadTreeBuilder</code>, so <code>GraphGenerator</code> would stop compiling.</p>
+    <p class="meta">QuadTreeBuilder.java:20 · GraphGenerator.java:69</p>
+  </div>
+  <div class="badge" aria-label="insert stays public; private gives a compile error">
+    <p class="label">insert(Node)</p>
+    <p class="badge-word">public</p>
+    <p class="badge-row"><span>made private</span><span class="chip bad">compile error</span></p>
+    <p class="badge-row"><span>package-private</span><span class="chip bad">compile error</span></p>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <details open>
+    <summary>Answer <span class="toc-n">4</span></summary>
+    <ol>
+      <li><a href="#callers">Who calls it</a></li>
+      <li><a href="#inside">Why the inside calls look private</a></li>
+      <li><a href="#package">Why not package-private</a></li>
+      <li><a href="#why">Why the builder needs it at all</a></li>
+    </ol>
+  </details>
+  <details open>
+    <summary>Also <span class="toc-n">1</span></summary>
+    <ol>
+      <li><a href="#members">The rest of the class</a></li>
+    </ol>
+  </details>
+</nav>
+
+<main>
+
+<section class="s" id="callers">
+  <p class="label s-tag">Who calls it</p>
+  <h3>One call from outside today, two after step 5</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Where</th><th>Call</th><th>Private OK?</th></tr></thead>
+      <tbody>
+        <tr><td class="loc">GraphGenerator.java:69</td><td><code>index.insert(seed)</code></td><td><span class="chip bad">no</span></td></tr>
+        <tr><td class="loc">step 5 (to add)</td><td><code>index.insert(candidate)</code></td><td><span class="chip bad">no</span></td></tr>
+        <tr><td class="loc">QuadTreeBuilder.java:22</td><td><code>ChildWithNode(node).insert(node)</code></td><td><span class="chip ok">yes</span></td></tr>
+        <tr><td class="loc">QuadTreeBuilder.java:87</td><td>the same call, in <code>split()</code></td><td><span class="chip ok">yes</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="panel">
+    <p class="label">Measured · scratch copy with only <code>public</code> → <code>private</code> on insert</p>
+<pre><code><span class="err">Caller.java:6: error: insert(Node) has private access in QuadTreeBuilder</span>
+        index.insert(seed);
+             ^
+1 error</code></pre>
+  </div>
+  <p class="soft"><code>Caller</code> is a two-line class in your generator's package that makes the same call as line 69. The two calls inside <code>QuadTreeBuilder</code> still compiled. Your project files weren't touched.</p>
+</section>
+
+<section class="s" id="inside">
+  <p class="label s-tag">Why the inside calls look private</p>
+  <h3><code>private</code> means "this class", not "this object"</h3>
+  <ul>
+    <li>At line 22, one builder calls <code>insert</code> on <em>another</em> builder, its child. That's allowed with <code>private</code>, because the calling code is written inside <code>QuadTreeBuilder</code>.</li>
+    <li>You already rely on this: <code>freeze</code> is private, and line 76 calls <code>child.freeze(leaves)</code> on each child.</li>
+    <li>So the recursion alone would be fine with <code>private</code>. The call at <code>GraphGenerator.java:69</code> is the one that needs <code>public</code>.</li>
+  </ul>
+</section>
+
+<section class="s" id="package">
+  <p class="label s-tag">Why not package-private</p>
+  <h3>Java packages don't nest, so the parent package can't see it</h3>
+  <ul>
+    <li>Leaving the modifier out makes <code>insert</code> visible only inside <code>be.magycks.ragga.generation.quadtree</code>.</li>
+    <li><code>GraphGenerator</code> is in <code>be.magycks.ragga.generation</code>. The names look like parent and child, but to the compiler they are two unrelated packages, so this fails with the same kind of error.</li>
+  </ul>
+</section>
+
+<section class="s" id="why">
+  <p class="label s-tag">Why the builder needs it at all</p>
+  <h3>Nodes go in one at a time while the city grows</h3>
+  <p>In step 5, each candidate is checked against every node placed before it, so it has to be in the index before the next candidate is drawn. A constructor that takes all the nodes at once can't do that, because they don't exist yet. That's why there are two classes: the builder takes <code>insert</code> calls while the city grows, and <code>build()</code> hands the street phase a frozen tree with no <code>insert</code> at all.</p>
+  <div class="callout info">
+    <p class="label">The idea</p>
+    <p>A method's access shows who is allowed to call it. <code>insert</code> is how the builder gets filled, so the code that fills it has to be able to reach it. <code>split</code>, <code>freeze</code> and <code>ChildWithNode</code> are steps inside <code>insert</code> and <code>build</code>, and they are already private.</p>
+  </div>
+</section>
+
+<section class="s" id="members">
+  <p class="label s-tag">The rest of the class</p>
+  <h3>The other methods are already set right, with one choice left to you</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Member</th><th>Now</th><th>Called from</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr><td class="topic">insert</td><td>public</td><td>GraphGenerator</td><td><span class="chip ok">right</span></td></tr>
+        <tr><td class="topic">findWithin</td><td>public</td><td>step 5</td><td><span class="chip ok">right</span></td></tr>
+        <tr><td class="topic">build</td><td>public</td><td>step 6</td><td><span class="chip ok">right</span></td></tr>
+        <tr><td class="topic">collectWithin</td><td>public</td><td>only <code>findWithin</code> and itself, for now</td><td><span class="chip warn">your call</span></td></tr>
+        <tr><td class="topic">freeze · split · ChildWithNode</td><td>private</td><td>inside the class</td><td><span class="chip ok">right</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><code>collectWithin</code> is public on purpose in the notes (Q22). It lets a busy loop reuse one list: <code>nearby.clear(); index.collectWithin(x, y, r, nearby);</code>. Step 5 is that kind of loop, with 16 candidates per node. If you'll only ever use <code>findWithin</code>, it can be <code>private</code>, which would match your comment at line 37 ("the recursive part").</p>
+</section>
+
+</main>
+</div>
+
+<script>
+// marks the index entry of the section in view
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  if (!('IntersectionObserver' in window)) return;
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      links.forEach(function (a) { a.removeAttribute('aria-current'); });
+      var a = byId[e.target.id];
+      if (a) a.setAttribute('aria-current', 'true');
+    });
+  }, { rootMargin: '-15% 0px -75% 0px' });
+  Object.keys(byId).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) io.observe(el);
+  });
+})();
+</script>
+</body>
+</html>

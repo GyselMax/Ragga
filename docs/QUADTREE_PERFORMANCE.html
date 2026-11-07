@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ragga Quadtree Performance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Literata:ital,wght@0,400;0,600;1,400&family=Schibsted+Grotesk:wght@500;700;800&display=swap">
+<style>
+/* always dark: the dark palette of COUNCIL_REVIEW.html */
+:root {
+  --paper: #12171b;
+  --sheet: #182027;
+  --ink: #dde4e8;
+  --ink-soft: #9cabb5;
+  --rule: #2c3841;
+  --accent: #86bbe0;
+  --accent-soft: #1c3042;
+  --warn: #e0aa5c;
+  --warn-soft: #33281a;
+  --ok: #8fd0a2;
+  --ok-soft: #1f3d2a;
+  --bad: #f0a0a0;
+  --bad-soft: #45242a;
+  --code-bg: #1b232a;
+  color-scheme: dark;
+
+  --f-display: "Schibsted Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Literata", Georgia, "Times New Roman", serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Consolas, "Courier New", monospace;
+}
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 17px;
+  line-height: 1.62;
+}
+a { color: var(--accent); }
+code {
+  font-family: var(--f-mono);
+  font-size: .84em;
+  background: var(--code-bg);
+  padding: .08em .35em;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+strong { font-weight: 600; }
+
+/* PAGE FRAME */
+.page {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding-inline: 24px;
+  padding-block: 48px 96px;
+  display: grid;
+  grid-template-columns: 16.5rem minmax(0, 1fr);
+  gap: 2.5rem 3.5rem;
+}
+@media (max-width: 880px) {
+  .page { grid-template-columns: minmax(0, 1fr); padding-inline: 16px; padding-block: 28px 64px; gap: 2rem; }
+}
+.eyebrow, .label {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  margin: 0;
+}
+
+/* MASTHEAD */
+.masthead {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.5rem 2.5rem;
+  align-items: end;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--rule);
+}
+.masthead-text { display: flex; flex-direction: column; gap: .7rem; min-width: 0; }
+.masthead .eyebrow { color: var(--accent); }
+h1 {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-size: clamp(2.2rem, 5.5vw, 3.5rem);
+  line-height: 1.04;
+  letter-spacing: -.025em;
+  margin: 0;
+  text-wrap: balance;
+}
+.lede { font-size: 1.12rem; color: var(--ink-soft); max-width: 60ch; margin: 0; }
+.meta { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-soft); margin: 0; }
+.badge {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+  min-width: 15rem;
+}
+.badge > * { margin: 0; }
+.badge .label { color: var(--ink-soft); }
+.badge-word { font-family: var(--f-display); font-weight: 800; font-size: 2rem; line-height: 1.1; color: var(--ok); }
+.badge-row { display: flex; justify-content: space-between; align-items: center; gap: .8rem; font-family: var(--f-mono); font-size: 12.5px; }
+@media (max-width: 880px) { .masthead { grid-template-columns: minmax(0, 1fr); } .badge { min-width: 0; } }
+
+/* INDEX, in folders */
+.toc {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+.toc details > summary {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 14px;
+}
+.toc details > summary::-webkit-details-marker { display: none; }
+.toc details > summary::before { content: "▸"; width: .8rem; font-size: 11px; color: var(--ink-soft); transition: transform .15s; }
+.toc details[open] > summary::before { transform: rotate(90deg); }
+.toc details > summary:hover { background: var(--accent-soft); }
+.toc details > summary:focus-visible, .toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toc-n { margin-left: auto; font-family: var(--f-mono); font-size: 11.5px; font-weight: 600; color: var(--ink-soft); }
+.toc ol { list-style: none; margin: 0; padding: 0 0 .35rem .55rem; display: flex; flex-direction: column; gap: 2px; }
+.toc a {
+  display: block;
+  padding: .42rem .6rem;
+  border-radius: 6px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-family: var(--f-display);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.toc a:hover, .toc a[aria-current="true"] { background: var(--accent-soft); color: var(--ink); }
+@media (max-width: 880px) { .toc { position: static; max-height: none; } }
+@media (prefers-reduced-motion: reduce) { .toc details > summary::before { transition: none; } }
+
+/* SECTIONS */
+main { min-width: 0; display: flex; flex-direction: column; gap: 4rem; container-type: inline-size; }
+.part-head { display: flex; flex-direction: column; gap: .4rem; padding-top: 1rem; border-top: 3px solid var(--ink); }
+.part-head .eyebrow { color: var(--ink-soft); }
+.part-head h2 { font-family: var(--f-display); font-weight: 800; font-size: clamp(1.7rem, 3.6vw, 2.4rem); line-height: 1.1; margin: 0; letter-spacing: -.015em; }
+section.s { display: flex; flex-direction: column; gap: 1.15rem; scroll-margin-top: 24px; min-width: 0; }
+section.s > * { margin: 0; }
+section.s + section.s { padding-top: 3.2rem; border-top: 1px solid var(--rule); }
+.s-tag { color: var(--accent); }
+section.s h3 {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  line-height: 1.17;
+  letter-spacing: -.012em;
+  max-width: 32ch;
+  text-wrap: balance;
+}
+section.s p, section.s li { max-width: 70ch; }
+.soft { color: var(--ink-soft); }
+
+/* CALLOUTS */
+.callout { border-radius: 8px; padding: .95rem 1.15rem; display: flex; flex-direction: column; gap: .35rem; max-width: 76ch; }
+.callout > * { margin: 0; }
+.callout.warn { background: var(--warn-soft); }
+.callout.warn .label { color: var(--warn); }
+.callout.info { background: var(--accent-soft); }
+.callout.info .label { color: var(--accent); }
+.callout.ok { background: var(--ok-soft); }
+.callout.ok .label { color: var(--ok); }
+
+/* TABLES */
+.tbl { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; line-height: 1.5; }
+th, td { text-align: left; padding: .6rem .9rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: var(--paper);
+  white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: 0; }
+td.topic { font-family: var(--f-display); font-weight: 700; font-size: .95rem; min-width: 8rem; }
+td.num, th.num { text-align: right; font-family: var(--f-mono); font-size: 13px; white-space: nowrap; }
+.sub { font-family: var(--f-mono); font-size: 11.5px; font-weight: 400; color: var(--ink-soft); white-space: nowrap; }
+.wide-tbl table { min-width: 38rem; }
+
+/* CHIPS */
+.chip {
+  display: inline-block;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: .18em .6em;
+  border-radius: 99px;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.info { background: var(--accent-soft); color: var(--accent); }
+.chip.mute { background: var(--code-bg); color: var(--ink-soft); }
+.facts { display: flex; flex-wrap: wrap; gap: .4rem; }
+
+/* WATERFALL: one bar per version, same scale */
+.wf {
+  display: grid;
+  grid-template-columns: minmax(0, 16rem) minmax(0, 1fr) 4.8rem;
+  gap: .6rem .9rem;
+  align-items: center;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+}
+.wf > * { margin: 0; }
+.wf .lab { font-family: var(--f-display); font-weight: 600; font-size: 14px; line-height: 1.3; }
+.wf .track { height: .8rem; background: var(--code-bg); border-radius: 99px; overflow: hidden; }
+.wf .track span { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
+.wf .track span.base { background: var(--ink-soft); }
+.wf .val { font-family: var(--f-mono); font-size: 12.5px; font-weight: 600; text-align: right; white-space: nowrap; }
+@container (max-width: 34rem) { .wf { grid-template-columns: minmax(0, 1fr) 4.8rem; } .wf .lab { grid-column: 1 / -1; margin-bottom: -.3rem; } }
+
+/* PROFILE MIX: stacked share bars */
+.mix { display: flex; flex-direction: column; gap: .9rem; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem 1.2rem; }
+.mix > * { margin: 0; }
+.mix-row { display: flex; flex-direction: column; gap: .35rem; }
+.mix-row > * { margin: 0; }
+.mix-name { font-family: var(--f-display); font-weight: 600; font-size: 14px; }
+.stackbar { display: flex; height: 1.5rem; border-radius: 6px; overflow: hidden; background: var(--code-bg); }
+.stackbar span {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; min-width: 0; overflow: hidden;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600; color: var(--paper);
+}
+.c-tree { background: var(--accent); }
+.c-graph { background: var(--warn); }
+.c-loop { background: var(--bad); }
+.c-line { background: var(--ok); }
+.c-other { background: var(--rule); color: var(--ink-soft) !important; }
+.legend { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: .35rem 1.1rem; font-family: var(--f-display); font-size: 13px; color: var(--ink-soft); }
+.legend li { display: flex; align-items: center; gap: .4rem; }
+.sw { width: .85rem; height: .85rem; border-radius: 3px; flex: none; }
+
+/* NUMBERED STEPS (real sequences only) */
+.steps { list-style: none; counter-reset: step; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1.1rem; max-width: 76ch; }
+.steps > li { counter-increment: step; display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: .8rem; }
+.steps > li::before {
+  content: counter(step);
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--paper);
+  font: 600 13px/1.85rem var(--f-mono);
+  text-align: center;
+}
+.steps .step-body { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
+.steps .step-body > * { margin: 0; }
+.steps h4 { font-family: var(--f-display); font-size: 1.08rem; font-weight: 700; line-height: 1.35; display: flex; flex-wrap: wrap; gap: .3rem .6rem; align-items: baseline; }
+.where { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="masthead">
+  <div class="masthead-text">
+    <p class="eyebrow">Quadtree performance · 2026-11-03</p>
+    <h1>Over 100× faster in a big city, and 2× more is easy</h1>
+    <p class="lede">A copy of <code>GraphGenerator</code> with your quadtree wired in as Q21 describes. Every version builds exactly the same streets as the plain loops. Three small changes in the street code halve the time again, and changing one word in the graph type saves another 11–14%.</p>
+    <p class="meta">seed 67 · application.properties settings · JDK 25.0.1 · medians of 3–21 runs · no project files changed</p>
+  </div>
+  <div class="badge" aria-label="Speed-up at 11,106 nodes: 106 times">
+    <p class="label">Speed-up, 11,106 nodes</p>
+    <p class="badge-word">106×</p>
+    <p class="badge-row"><span>seed 67 (326 nodes)</span><span class="chip mute">1.15×</span></p>
+    <p class="badge-row"><span>2,785 nodes</span><span class="chip ok">15×</span></p>
+    <p class="badge-row"><span>+ 3 changes</span><span class="chip ok">235×</span></p>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <details open>
+    <summary>Results <span class="toc-n">2</span></summary>
+    <ol>
+      <li><a href="#speedup">Plain vs quadtree</a></li>
+      <li><a href="#estimates">Against the estimates</a></li>
+    </ol>
+  </details>
+  <details open>
+    <summary>Improvements <span class="toc-n">2</span></summary>
+    <ol>
+      <li><a href="#time">Where the time goes</a></li>
+      <li><a href="#changes">Three changes</a></li>
+    </ol>
+  </details>
+  <details open>
+    <summary>Background <span class="toc-n">1</span></summary>
+    <ol>
+      <li><a href="#method">How it was measured</a></li>
+    </ol>
+  </details>
+</nav>
+
+<main>
+
+<!-- ============ RESULTS ============ -->
+<div class="part-head">
+  <p class="eyebrow">Part 1</p>
+  <h2>Results</h2>
+</div>
+
+<section class="s" id="speedup">
+  <p class="label s-tag">Plain loops vs your quadtree</p>
+  <h3>The bigger the city, the bigger the win</h3>
+  <div class="tbl wide-tbl">
+    <table>
+      <thead><tr><th>City</th><th class="num">Plain</th><th class="num">Q21 tree</th><th class="num">+ 3 changes</th><th>Speed-up</th></tr></thead>
+      <tbody>
+        <tr><td class="topic">1 starter (today)<br><span class="sub">326 nodes · 549 streets</span></td><td class="num">34 ms</td><td class="num">30 ms</td><td class="num">11 ms</td><td><span class="chip mute">1.15×</span> <span class="chip ok">3.2×</span></td></tr>
+        <tr><td class="topic">9 starters<br><span class="sub">2,785 · 4,746</span></td><td class="num">3,756 ms</td><td class="num">254 ms</td><td class="num">100 ms</td><td><span class="chip ok">15×</span> <span class="chip ok">37×</span></td></tr>
+        <tr><td class="topic">36 starters<br><span class="sub">11,106 · 18,961</span></td><td class="num">112,977 ms</td><td class="num">1,066 ms</td><td class="num">480 ms</td><td><span class="chip ok">106×</span> <span class="chip ok">235×</span></td></tr>
+        <tr><td class="topic">324 starters<br><span class="sub">99,804 · 170,225</span></td><td class="num">≥ 2.5 h</td><td class="num">10,310 ms</td><td class="num">5,123 ms</td><td><span class="chip mute">not run</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="soft">Speed-up: plain → Q21 tree, then plain → tree with the three changes. The plain 324-starter time wasn't run. It's extrapolated from 36 starters as n², and plain loops actually grow faster than that.</p>
+  <div class="callout info">
+    <p class="label">Growth</p>
+    <p>Plain loops grow much faster than the city: 4× the nodes made them 30× slower. The tree grows almost in step with the city: 9× the nodes, 9.7× the time.</p>
+  </div>
+</section>
+
+<section class="s" id="estimates">
+  <p class="label s-tag">Against the estimates</p>
+  <h3>The speed-ups beat the notes; absolute times run about 2× slower</h3>
+  <div class="tbl wide-tbl">
+    <table>
+      <thead><tr><th>Measure</th><th>Notes</th><th>Measured</th><th></th></tr></thead>
+      <tbody>
+        <tr><td class="topic">Speed-up, 9 starters</td><td>9.6× (Q8)</td><td>14.8×</td><td><span class="chip ok">better</span></td></tr>
+        <tr><td class="topic">Seed 67, whole run</td><td>50 → 26 ms (Q8)</td><td>34 → 30 ms</td><td><span class="chip mute">tiny city</span></td></tr>
+        <tr><td class="topic">9 starters, whole run</td><td>1,946 → 203 ms (Q8)</td><td>3,756 → 254 ms</td><td><span class="chip warn">slower here</span></td></tr>
+        <tr><td class="topic">Plain loop counts</td><td>317,305 · 285,250 · 817,958 (Q8)</td><td>identical, also at 9 starters</td><td><span class="chip ok">match</span></td></tr>
+        <tr><td class="topic">Search, builder</td><td>274 · 550 · 976 ns (Q16)</td><td>518 · 1,102 · 2,004 ns</td><td><span class="chip warn">≈ 2× slower</span></td></tr>
+        <tr><td class="topic">Search, frozen tree</td><td>271 · 578 · 1,101 ns (Q22)</td><td>570 · 1,239 · 2,367 ns</td><td><span class="chip warn">≈ 2× slower</span></td></tr>
+        <tr><td class="topic">Frozen vs builder</td><td>10–15% slower (Q16)</td><td>10–18% slower</td><td><span class="chip ok">match</span></td></tr>
+        <tr><td class="topic">Reusing one list</td><td>3–10% faster (Q22)</td><td>1–11% faster</td><td><span class="chip ok">match</span></td></tr>
+        <tr><td class="topic">Node phase, 11,106 nodes</td><td>≈ 30 ms (Q16)</td><td>47 ms</td><td><span class="chip warn">slower here</span></td></tr>
+        <tr><td class="topic">Build · freeze, 11,106 nodes</td><td>0.64 · 0.12 ms (Q16)</td><td>0.99 · 0.38 ms</td><td><span class="chip mute">tiny either way</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="soft">Searches are at radius 40 · 120 · 240, 200,000 searches near real nodes, median of 9 rounds.</p>
+  <div class="callout info">
+    <p class="label">Why about 2× slower, and why it isn't your code</p>
+    <p>Your builder is the same code as Q16's <code>NodeQuadtree</code>, and it's 2× slower too, as is the plain 9-starter run. So the gap comes from the setup: a different PC (your last commit moved PCs) and slightly different search points. The ratios, which don't depend on the machine, match or beat the notes. Seed 67's plain time is lower than in Q8 because Q8 timed a single cold run, before the JIT had warmed up.</p>
+  </div>
+</section>
+
+<!-- ============ IMPROVEMENTS ============ -->
+<div class="part-head">
+  <p class="eyebrow">Part 2</p>
+  <h2>Improvements</h2>
+</div>
+
+<section class="s" id="time">
+  <p class="label s-tag">Where the time goes now</p>
+  <h3>Streets are 90% of the run, and crossing checks are the biggest part</h3>
+  <div class="mix" role="img" aria-label="Profile shares at 36 starters, before and after changes 1 and 2">
+    <div class="mix-row">
+      <p class="mix-name">Q21 wiring · 36 starters</p>
+      <div class="stackbar">
+        <span class="c-tree" style="width:29.1%">29%</span><span class="c-loop" style="width:22.7%">23%</span><span class="c-graph" style="width:21.6%">22%</span><span class="c-line" style="width:12.6%">13%</span><span class="c-other" style="width:14%">14%</span>
+      </div>
+    </div>
+    <div class="mix-row">
+      <p class="mix-name">After changes 1 and 2</p>
+      <div class="stackbar">
+        <span class="c-tree" style="width:24%">24%</span><span class="c-loop" style="width:3.8%"></span><span class="c-graph" style="width:42.5%">43%</span><span class="c-line" style="width:10.8%">11%</span><span class="c-other" style="width:18.9%">19%</span>
+      </div>
+    </div>
+    <ul class="legend">
+      <li><span class="sw c-tree"></span>quadtree searches</li>
+      <li><span class="sw c-loop"></span><code>isCrossingFree</code>'s own loop</li>
+      <li><span class="sw c-graph"></span>JGraphT lookups (<code>HashMap</code>)</li>
+      <li><span class="sw c-line"></span>line intersection math</li>
+      <li><span class="sw c-other"></span>everything else</li>
+    </ul>
+  </div>
+  <p>With the Q21 wiring, every candidate in a street step runs its own 240 search for crossings. Once that search happens once per step, the biggest cost is JGraphT itself: each crossing test asks the graph for a street's two ends, which is a <code>HashMap</code> lookup each.</p>
+  <p class="soft">Java Flight Recorder, 8 runs of 36 starters per version. The node phase is 47 of 480 ms after all three changes.</p>
+</section>
+
+<section class="s" id="changes">
+  <p class="label s-tag">Three changes, measured</p>
+  <h3>Four changes, each one builds the exact same city</h3>
+  <div class="wf" role="img" aria-label="Run time at 36 starters for each version">
+    <p class="lab">Q21 wiring</p><div class="track"><span class="base" style="width:100%"></span></div><p class="val">1,066 ms</p>
+    <p class="lab">+ 1 · crossing search once per step</p><div class="track"><span style="width:57.4%"></span></div><p class="val">612 ms</p>
+    <p class="lab">+ 2 · triangle check without sets</p><div class="track"><span style="width:54.4%"></span></div><p class="val">580 ms</p>
+    <p class="lab">+ 3 · streets as end-node pairs</p><div class="track"><span style="width:45%"></span></div><p class="val">480 ms</p>
+    <p class="lab">+ 4 · SimpleGraph</p><div class="track"><span style="width:38.9%"></span></div><p class="val">≈ 415 ms</p>
+  </div>
+  <p class="soft">36 starters, 11,106 nodes. Plain loops take 112,977 ms, 106 times the top bar. Change 4 was measured in a separate run (507 → 439 ms, −14%), and its bar is scaled from that.</p>
+
+  <ol class="steps">
+    <li><div class="step-body">
+      <h4>Do the 240 search once per street step <span class="chip ok">−43%</span></h4>
+      <p class="where">growStreet / isCrossingFree</p>
+      <p>Every candidate asks the same question around <code>current</code>, and no street is added until the step ends. So search once per step and reuse the nearby streets for every candidate. Take each street only from its source end: both ends always lie within 240, so this halves the crossing tests.</p>
+    </div></li>
+    <li><div class="step-body">
+      <h4>Check triangles without building sets <span class="chip ok">−5%</span></h4>
+      <p class="where">isTriangleFree</p>
+      <p><code>Collections.disjoint(neighborSetOf(a), neighborSetOf(b))</code> builds two sets for every candidate. Looping over <code>a</code>'s streets and asking <code>graph.containsEdge(otherEnd, b)</code> gives the same answer without building anything.</p>
+    </div></li>
+    <li><div class="step-body">
+      <h4>Keep the step's streets as end-node pairs <span class="chip ok">−17%</span></h4>
+      <p class="where">the list from change 1</p>
+      <p>Store each street's two <code>Node</code>s when you collect them. Every crossing test after that is plain arithmetic, with no <code>getEdgeSource</code>/<code>getEdgeTarget</code> lookups.</p>
+    </div></li>
+    <li><div class="step-body">
+      <h4>Use <code>SimpleGraph</code> instead of <code>SimpleWeightedGraph</code> <span class="chip ok">−14%</span> <span class="chip info">one word</span></h4>
+      <p class="where">GraphGenerator.java:53</p>
+      <p>No street ever gets a weight. In a weighted graph, JGraphT can't read a <code>DefaultEdge</code>'s ends from the edge itself, so every <code>getEdgeSource</code> and <code>getEdgeTarget</code> becomes a <code>HashMap</code> lookup. <code>SimpleGraph</code> reads them straight from the edge. The city is the same, and even the plain loops get 31–38% faster. If you want weights later, use <code>DefaultWeightedEdge</code> instead.</p>
+    </div></li>
+  </ol>
+
+  <div class="callout warn">
+    <p class="label">Not worth it yet</p>
+    <p>Arrays instead of lists in <code>Leaf</code>/<code>Branch</code> (Q16: 10–15% per search), or reusing one list instead of <code>findWithin</code> (1–11% per search). Searches are about a quarter of the run, so each would save only a few percent overall.</p>
+  </div>
+</section>
+
+<!-- ============ BACKGROUND ============ -->
+<div class="part-head">
+  <p class="eyebrow">Part 3</p>
+  <h2>Background</h2>
+</div>
+
+<section class="s" id="method">
+  <p class="label s-tag">How it was measured</p>
+  <h3>A faithful copy, checked street by street</h3>
+  <div class="facts">
+    <span class="chip ok">same streets, same order, every size</span>
+    <span class="chip ok">plain counts = Q8's exactly</span>
+    <span class="chip ok">2,785 and 11,106 nodes, as in Q8 and Q16</span>
+  </div>
+  <div class="tbl">
+    <table>
+      <tbody>
+        <tr><td class="topic">Generator</td><td><code>GraphGenerator</code> copied into plain Java (no Spring or MySQL), seed 67, the settings from <code>application.properties</code>. Starters are placed 1500 apart on a k × k grid, like Q8 and Q16.</td></tr>
+        <tr><td class="topic">Quadtree</td><td>Your current <code>QuadTreeBuilder</code> and <code>QuadTree</code> from <code>target/classes</code>. <code>QuadTree</code> has no <code>findWithin</code> yet, so the benchmark calls <code>collectWithin</code> with a new list, which is what <code>findWithin</code> would do.</td></tr>
+        <tr><td class="topic">Timing</td><td>Warm-up first, then the median of 3–21 runs per version in rotating order. The plain run at 36 starters ran once (113 s).</td></tr>
+        <tr><td class="topic">Not covered</td><td>Your real <code>GraphGenerator</code>, which doesn't use the tree yet, memory use, and the PNG rendering.</td></tr>
+        <tr><td class="topic">Files</td><td><code>C:\Users\maxgy\AppData\Local\Temp\claude\C--Users-maxgy-OneDrive-Desktop-Ragga\9a8a1598-be96-437e-a255-01c7e2aa7524\scratchpad\bench\</code>: <code>GenBench.java</code> and <code>SearchBench.java</code>. They're outside the repo.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+// marks the index entry of the section in view
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  if (!('IntersectionObserver' in window)) return;
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      links.forEach(function (a) { a.removeAttribute('aria-current'); });
+      var a = byId[e.target.id];
+      if (a) a.setAttribute('aria-current', 'true');
+    });
+  }, { rootMargin: '-15% 0px -75% 0px' });
+  Object.keys(byId).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) io.observe(el);
+  });
+})();
+</script>
+</body>
+</html>

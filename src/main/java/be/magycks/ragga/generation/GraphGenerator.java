@@ -1,5 +1,6 @@
 package be.magycks.ragga.generation;
 
+import be.magycks.ragga.generation.quadtree.QuadTreeBuilder;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultEdge;
@@ -52,7 +53,7 @@ public class GraphGenerator implements CommandLineRunner {
         Random random = new Random(GENERATION_SEED);
         Graph<Node, DefaultEdge> graph = new SimpleWeightedGraph<>(DefaultEdge.class);
 
-        // starter nodes aka seeds
+        // starter nodes aka seeds - HARD CODED FOR NOW, CHANGE LATER!
         List<Node> seeds = List.of(
                 new Node(750, 750, 5.5)
                 //new Node(700, 500, 2.5),
@@ -62,8 +63,10 @@ public class GraphGenerator implements CommandLineRunner {
 
         // generate the queue & add the seeds to it
         Queue<Node> pending = new ArrayDeque<>();
+        QuadTreeBuilder index = new QuadTreeBuilder(0, 0, Math.max(GRID_WIDTH, GRID_HEIGHT));                   // adds the quadtree and seeds into it
         for (Node seed : seeds) {
             graph.addVertex(seed);
+            index.insert(seed);
             pending.add(seed);
         }
 
@@ -155,7 +158,6 @@ public class GraphGenerator implements CommandLineRunner {
 
 
     /* ALL EDGE GENERATION (mostly by claude) */
-
     /// EDGE GENERATION ITSELF ///
     // (MAIN CODE) - generates edges following the sanity checks
     private void generateEdges(@NonNull Graph<Node, DefaultEdge> graph, Random random) {
